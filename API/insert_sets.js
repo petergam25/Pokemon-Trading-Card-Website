@@ -12,9 +12,9 @@ const connection = mysql.createConnection(
    { 
       host: 'localhost',
       user: 'root',
-      password: '',       // no password is needed for XAMPP
-      database: 'tradecard', // this is the NAME of your DB 
-      port: '3306',       // this PORT for XAMPP only
+      password: '',
+      database: 'tradecard',
+      port: '3306',
    }
 );
 
