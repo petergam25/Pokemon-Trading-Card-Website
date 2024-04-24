@@ -31,12 +31,12 @@
     <%- include('partials/header') %>
 
         <h1>SETS PAGE</h1>
-        <h3>202 Expansions</h3>
+        
         <hr>
 
         <!-- Search bar with filter retention -->
         <form action="/sets" method="GET">
-            <label for="search">Search for sets:</label>
+            <label for="search">Search for Sets:</label>
             <input type="text" id="search" name="query" value="<%= currentQuery %>">
 
             <!-- Hidden input field to retain filter -->
@@ -46,17 +46,19 @@
             <button type="submit">Search</button>
         </form>
 
+        <h4 id="setsCount"></h4>
+
         <div class="row">
-            <div class="col-md-auto">
-                <label for="sortBy" class="form-label">Sort by:</label>
+            <div class="col-md-auto d-flex align-items-center"> <!-- Added d-flex and align-items-center classes -->
+                <label for="sortBy" class="form-label me-3">Sort by:</label> <!-- Added me-3 class for margin -->
                 <select class="form-select" id="sortBy" aria-label="Default select example">
                     <option value="name">Name</option>
                     <option value="series_ID">Series</option>
                     <option value="releaseDate">Release Date</option>
                 </select>
             </div>
-            <div class="col-md-auto">
-                <label for="sortOrder" class="form-label">Order:</label>
+            <div class="col-md-auto d-flex align-items-center"> <!-- Added d-flex and align-items-center classes -->
+                <label for="sortOrder" class="form-label me-3">Order:</label> <!-- Added me-3 class for margin -->
                 <select class="form-select" id="sortOrder" aria-label="Default select example">
                     <option value="asc">Ascending</option>
                     <option value="desc">Descending</option>
@@ -132,7 +134,19 @@
                         const currentQuery = $('#search').val(); // Get current query value
                         window.location.search = `?sort=${currentSort}&order=${sortOrder}&query=${currentQuery}`; // Include query in URL
                     });
+
+                    // Function to update the sets count based on displayed sets
+                    function updateSetsCount() {
+                        const setsCount = $('.row .col').length; // Get the number of sets displayed
+                        $('#setsCount').text(`${setsCount} Sets`); // Update the header text
+                    }
+
+                    // Call the function initially and whenever sets are updated
+                    updateSetsCount();
+                    $('#sortBy, #sortOrder').change(updateSetsCount);
                 });
+
+
             </script>
 
 </body>

@@ -45,13 +45,14 @@ router.get('/', (req, res) => {
     });
 });
 
-/*
+
 // SET DETAILS PAGE
 router.get('/:setId', (req, res) => {
     const setId = req.params.setId; // Get the set ID from URL params
 
     // Query the database to fetch details of the specified set
     const setSQL = `SELECT * FROM sets WHERE id = ?`;
+
     connection.query(setSQL, [setId], (err, result) => {
         if (err) throw err;
         if (result.length === 0) {
@@ -60,9 +61,9 @@ router.get('/:setId', (req, res) => {
         } else {
             // Render the set details page with the set data
             res.render('setdetails', { set: result[0] });
+            console.log(result);
         }
     });
 });
-*/
 
 module.exports = router;
