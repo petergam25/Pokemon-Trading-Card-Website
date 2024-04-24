@@ -2,6 +2,10 @@
 const express = require('express');
 const path = require('path');
 const connection = require('./database'); // Import database connection
+const cookieParser = require('cookie-parser');
+const sessions = require('express-session');
+
+const oneHour = 1000 * 60 * 60 * 1;
 
 // Create Express app
 const app = express();
@@ -11,6 +15,15 @@ const PORT = process.env.PORT || 3000;
 app.set('view engine', 'ejs'); // Set EJS as the view engine
 app.set('views', path.join(__dirname, 'views')); // Set views directory
 app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from the public directory
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+app.use(sessions({
+    secret: "myshows14385899",
+    saveUninitialized: true,
+    cookie: { maxAge: oneHour },
+    resave: false
+}));
 
 // Import Routes
 const cardsRoutes = require('./routes/cards');
@@ -30,8 +43,8 @@ app.get('/', (req, res) => {
 });
 
 // ABOUT PAGE
-app.get('/about', (req, res) => {
-    res.render('about');
+app.get('/dashboard', (req, res) => {
+    res.render('dashboard');
 });
 
 // Server Listening
