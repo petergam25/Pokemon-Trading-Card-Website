@@ -41,7 +41,7 @@ router.get('/', (req, res) => {
     // Execute the final SQL query
     connection.query(setsSQL, (err, result) => {
         if (err) throw err;
-        res.render('sets', { setlist: result, currentQuery: query, currentSort: sort, currentOrder: order}); // Pass currentFilter to the view
+        res.render('sets', { setlist: result, currentQuery: query, currentSort: sort, currentOrder: order }); // Pass currentFilter to the view
     });
 });
 
@@ -52,16 +52,24 @@ router.get('/:setId', (req, res) => {
 
     // Query the database to fetch details of the specified set
     const setSQL = `SELECT * FROM sets WHERE id = ?`;
+    const cardsInSetSQL = 'SELECT * FROM cards WHERE set_ID = ?'
 
     connection.query(setSQL, [setId], (err, result) => {
         if (err) throw err;
         if (result.length === 0) {
             // Handle case where set is not found
-            res.status(404).send('Set not found - specific set');
+            res.status(404).send('Set not found.');
         } else {
-            // Render the set details page with the set data
-            res.render('setsdetails', { set: result[0] });
-            console.log(result);
+            // Query the database to fetch all cards belonging to the set
+            connection.query(cardsInSetSQL, [setId], (err, cardsResult) => {
+                if (err) throw err;
+
+                // Render the set details page with the set data and card data
+                res.render('setsdetails', {
+                    set: result[0], // Set details
+                    cardsInSet: cardsResult // Cards belonging to the series
+                });
+            });
         }
     });
 });

@@ -10,7 +10,7 @@
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <style>
         .card-img {
-            height: 150px;
+            height: auto;
             /* Adjust the height as needed */
             object-fit: fill;
             /* Ensure the image covers the entire space */
@@ -31,6 +31,12 @@
 
         <div class="container">
             <%= card.name %>
+        </div>
+        <div class="card-img-wrapper p-3">
+            <% if (card.image) { %>
+                <img src="<%= card.image %>" class="card-img card-img-max-height"
+                    alt="<%= card.name %> Logo">
+                <% } %>
         </div>
 
         <!-- Include footer if needed -->
