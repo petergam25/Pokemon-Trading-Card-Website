@@ -1,31 +1,27 @@
 //node C:\Users\peter\Desktop\tradecard\API\populateDB.js
 
-
+/*
 const axios = require('axios');
 const express = require("express");
 const app = express();
 const mysql = require("mysql2");
 
 app.set("view engine", "ejs");
+*/
 
-const connection = mysql.createConnection(
-    {
-        host: 'localhost',
-        user: 'root',
-        password: '',
-        database: 'tradecard',
-        port: '3306',
-    }
-);
+const axios = require('axios');
+const mysql = require('mysql2/promise');
 
-connection.connect((err) => {
-    if (err) {
-        return console.log(err.message)
-    } else {
-        return console.log(`Connection to local MySQL DB.`)
-    };
+// Create a pool of connections
+const pool = mysql.createPool({
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'tradecard',
+    port: '3306',
 });
 
+/*
 async function insertSeriesFromAPI() {
     try {
         // Fetch data from the API
@@ -62,9 +58,17 @@ async function insertSeriesFromAPI() {
         console.error('Error inserting series:', error);
     }
 }
+*/
+
+
 
 async function insertSetsFromAPI() {
+    let connection;
+
     try {
+        // Get a connection from the pool
+        connection = await pool.getConnection();
+
         // Fetch set IDs from the first API
         const response = await axios.get('https://api.tcgdex.net/v2/en/sets/');
         const setIds = response.data.map(set => set.id);
@@ -101,16 +105,96 @@ async function insertSetsFromAPI() {
         }
 
         console.log('Sets inserted successfully.');
-
     } catch (error) {
         console.error('Error inserting sets:', error);
+    } finally {
+        // Release the connection back to the pool
+        if (connection) {
+            connection.release();
+        }
+    }
+}
+
+async function insertCardsFromAPI() {
+    let connection;
+
+    try {
+        // Get a connection from the pool
+        connection = await pool.getConnection();
+
+        // Fetch set IDs from the first API
+        const response = await axios.get('https://api.tcgdex.net/v2/en/cards/');
+        const cardIds = response.data.map(card => card.id);
+
+        // Log card IDs for debugging
+        console.log('Cards IDs:', cardIds);
+
+        // Iterate through card IDs to fetch detailed info
+        for (const cardId of cardIds) {
+            try {
+                // Fetch detailed info for each card ID from the second API
+                const detailedResponse = await axios.get(`https://api.tcgdex.net/v2/en/cards/${cardId}`);
+
+                // Extract relevant data from detailed response
+                const { category, id, illustrator, image, name, rarity, description, level,
+                    set: { id: setId },
+                    variants: { firstEdition, holo, normal, reverse, wPromo },
+                    dexId, hp, types, evolveFrom, stage, abilities, attacks, weaknesses, resistances,
+                    legal: { standard, expanded } } = detailedResponse.data;
+
+                // Handle undefined fields
+
+                // Insert card into database
+                await connection.execute(
+                    `INSERT INTO cards (id, name, image, category, illustrator, rarity, variantsNormal, variantsReverse, variantsHolo, variantsFirstEdition, set_ID, hp, evolveFrom, description, level, stage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                        id,
+                        name,
+                        image || '',
+                        category || '',
+                        illustrator || '',
+                        rarity || '',
+                        normal || '',
+                        reverse || '',
+                        holo || '',
+                        firstEdition ? 1 : '',
+                        setId || '',
+                        hp || '',
+                        evolveFrom || '',
+                        description || '',
+                        level || '',
+                        stage || ''
+                    ]
+                );
+                console.log('Inserted card:', { id, name });
+
+            } catch (error) {
+                console.error('Error inserting card:', cardId, error.message);
+                // Handle the error as needed, such as logging, skipping, or retrying
+                // Here we continue to the next iteration (skipping the current card)
+                continue;
+            }
+        }
+        console.log('Cards inserted successfully.');
+
+    } catch (error) {
+        console.error('Error inserting cards:', error);
+    } finally {
+        // Release the connection back to the pool
+        if (connection) {
+            connection.release();
+        }
     }
 }
 
 
+
+
+
 // Call the function to insert sets
 //insertSeriesFromAPI();
-insertSetsFromAPI();
+//insertSetsFromAPI();
+insertCardsFromAPI();
 
 
 //node C:\Users\peter\Desktop\tradecard\API\populateDB.js
