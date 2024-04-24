@@ -1,13 +1,15 @@
 const express = require('express');
 const router = express.Router();
+const connection = require('../database'); // Import database connection
 
-module.exports = (connection) => {
-    // Define route handlers using the 'connection' object
-    // Example:
-    router.get('/', (req, res) => {
-        // Use 'connection' to query the database
-        res.send('cards');
-    });
+// SERIES PAGE
+router.get('/', (req, res) => {
+  const seriesSQL = `SELECT id, name, logo FROM series;`;
 
-    return router;
-};
+  connection.query(seriesSQL, (err, result) => {
+    if (err) throw err;
+    res.render("series", { serieslist: result });
+  });
+});
+
+module.exports = router;
