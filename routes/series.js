@@ -8,7 +8,7 @@ router.get('/', (req, res) => {
 
     connection.query(seriesSQL, (err, result) => {
         if (err) throw err;
-        res.render("series", { serieslist: result });
+        res.render("series/series", { serieslist: result });
     });
 });
 
@@ -31,7 +31,7 @@ router.get('/:seriesId', (req, res) => {
                 if (err) throw err;
 
                 // Render the series details page with the series and sets data
-                res.render('seriesdetails', {
+                res.render('series/seriesdetails', {
                     series: seriesResult[0], // Pass series details
                     sets: setsResult // Pass sets belonging to the series
                 });

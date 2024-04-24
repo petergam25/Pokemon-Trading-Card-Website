@@ -8,7 +8,7 @@ router.get('/', (req, res) => {
 
   connection.query(cardsSQL, (err, result) => {
     if (err) throw err;
-    res.render("cards", { cardsList: result });
+    res.render("cards/cards", { cardsList: result });
   });
 });
 
@@ -33,7 +33,7 @@ router.get('/:cardsId', (req, res) => {
     }
 
     // Render the series details page with the series and sets data
-    res.render('cardsdetails', {
+    res.render('cards/cardsdetails', {
       card: cardsResult[0] // Assuming only one card is expected with this ID
     });
   });

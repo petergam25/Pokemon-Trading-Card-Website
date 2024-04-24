@@ -41,7 +41,7 @@ router.get('/', (req, res) => {
     // Execute the final SQL query
     connection.query(setsSQL, (err, result) => {
         if (err) throw err;
-        res.render('sets', { setlist: result, currentQuery: query, currentSort: sort, currentOrder: order }); // Pass currentFilter to the view
+        res.render('sets/sets', { setlist: result, currentQuery: query, currentSort: sort, currentOrder: order }); // Pass currentFilter to the view
     });
 });
 
@@ -65,7 +65,7 @@ router.get('/:setId', (req, res) => {
                 if (err) throw err;
 
                 // Render the set details page with the set data and card data
-                res.render('setsdetails', {
+                res.render('sets/setsdetails', {
                     set: result[0], // Set details
                     cardsInSet: cardsResult // Cards belonging to the series
                 });

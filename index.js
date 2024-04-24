@@ -16,11 +16,13 @@ app.use(express.static(path.join(__dirname, 'public'))); // Serve static files f
 const cardsRoutes = require('./routes/cards');
 const setsRoutes = require('./routes/sets');
 const seriesRoutes = require('./routes/series');
+const accountRoutes = require('./routes/account');
 
 // Mount routes
-app.use('/cards', cardsRoutes); // Mount cards routes
-app.use('/sets', setsRoutes); // Mount sets routes
-app.use('/series', seriesRoutes); // Mount series routes
+app.use('/cards', cardsRoutes);
+app.use('/sets', setsRoutes); 
+app.use('/series', seriesRoutes); 
+app.use('/account', accountRoutes);
 
 // HOME PAGE
 app.get('/', (req, res) => {
