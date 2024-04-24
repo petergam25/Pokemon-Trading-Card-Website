@@ -60,7 +60,7 @@ router.get('/:setId', (req, res) => {
             res.status(404).send('Set not found - specific set');
         } else {
             // Render the set details page with the set data
-            res.render('setdetails', { set: result[0] });
+            res.render('setsdetails', { set: result[0] });
             console.log(result);
         }
     });

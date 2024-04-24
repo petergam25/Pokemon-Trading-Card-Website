@@ -144,13 +144,20 @@ async function insertCardsFromAPI() {
 
                 // Handle undefined fields
 
+                // Append '.webp' to image URL if not empty
+                const modifiedImage = image ? (image.endsWith('.webp') ? image : image + '/high.webp') : '';
+
+                // Use a default image if image field is empty
+                const defaultImage = 'https://assets.tcgdex.net/en/base/base1/logo.webp';
+                const finalImage = modifiedImage || defaultImage;
+
                 // Insert card into database
                 await connection.execute(
                     `INSERT INTO cards (id, name, image, category, illustrator, rarity, variantsNormal, variantsReverse, variantsHolo, variantsFirstEdition, set_ID, hp, evolveFrom, description, level, stage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                         id,
                         name,
-                        image || '',
+                        finalImage,
                         category || '',
                         illustrator || '',
                         rarity || '',
@@ -186,6 +193,7 @@ async function insertCardsFromAPI() {
         }
     }
 }
+
 
 
 
