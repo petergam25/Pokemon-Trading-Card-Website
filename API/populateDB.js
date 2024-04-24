@@ -78,7 +78,7 @@ async function insertSetsFromAPI() {
             const detailedResponse = await axios.get(`https://api.tcgdex.net/v2/en/sets/${setId}`);
 
             // Extract relevant data from detailed response
-            const { id, name, logo, serie, cardCount, releaseDate, legal, tcgOnline } = detailedResponse.data;
+            const { id, name, logo, symbol, serie, cardCount, releaseDate, legal, tcgOnline } = detailedResponse.data;
             const { firstEd, holo, normal, official, reverse, total } = cardCount;
             const { expanded, standard } = legal;
 
@@ -86,9 +86,9 @@ async function insertSetsFromAPI() {
             const defaultLogoUrl = 'https://assets.tcgdex.net/en/base/base1/logo.webp';
             const sanitizedLogo = logo || ''; // Use default image if string empty
             const modifiedLogo = sanitizedLogo ? (sanitizedLogo.endsWith('.webp') ? sanitizedLogo : sanitizedLogo + '.webp') : defaultLogoUrl;
+            const modifiedSymbol = symbol ? (symbol.endsWith('.webp') ? symbol : symbol + '.webp') : '';
 
             const sanitizedTcgOnline = tcgOnline || ''; // Convert undefined to empty
-
 
             // Log extracted values for debugging
             console.log('Inserting set:', { id, name, modifiedLogo, serie, releaseDate, legal, tcgOnline, cardCount });
@@ -96,7 +96,7 @@ async function insertSetsFromAPI() {
             // Insert set into database
             await connection.execute(
                 `INSERT INTO sets (id, name, logo, symbol, cardCountTotal, cardCountOfficial, cardCountReverse, cardCountHolo, cardCountFirstEd, series_ID, tcgOnline, releaseDate, legalStandard, legalExpanded) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [id, name, modifiedLogo, serie.id, total, official, reverse, holo, firstEd, serie.id, sanitizedTcgOnline, releaseDate, standard, expanded]
+                [id, name, modifiedLogo, modifiedSymbol, total, official, reverse, holo, firstEd, serie.id, sanitizedTcgOnline, releaseDate, standard, expanded]
             );
         }
 
@@ -107,6 +107,10 @@ async function insertSetsFromAPI() {
     }
 }
 
+
 // Call the function to insert sets
 //insertSeriesFromAPI();
 insertSetsFromAPI();
+
+
+//node C:\Users\peter\Desktop\tradecard\API\populateDB.js

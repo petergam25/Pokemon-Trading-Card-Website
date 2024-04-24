@@ -1,32 +1,26 @@
+// Import Required Modules
 const express = require('express');
-const app = express();
-const mysql = require("mysql2");
 const path = require('path');
-const { resourceLimits } = require('worker_threads');
+const connection = require('./database'); // Import database connection
+
+// Create Express app
+const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+// Middleware and Configuration
+app.set('view engine', 'ejs'); // Set EJS as the view engine
+app.set('views', path.join(__dirname, 'views')); // Set views directory
+app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from the public directory
 
-app.use(express.static(path.join(__dirname, 'public')));
+// Import Routes
+const cardsRoutes = require('./routes/cards');
+const setsRoutes = require('./routes/sets');
+const seriesRoutes = require('./routes/series');
 
-const connection = mysql.createConnection(
-    {
-        host: 'localhost',
-        user: 'root',
-        password: '',
-        database: 'tradecard',
-        port: '3306',
-    }
-);
-
-connection.connect((err) => {
-    if (err) {
-        return console.log(err.message)
-    } else {
-        return console.log(`Connection to local MySQL DB.`)
-    };
-});
+// Mount routes
+app.use('/cards', cardsRoutes); // Mount cards routes
+app.use('/sets', setsRoutes); // Mount sets routes
+app.use('/series', seriesRoutes); // Mount series routes
 
 // HOME PAGE
 app.get('/', (req, res) => {
@@ -38,28 +32,7 @@ app.get('/about', (req, res) => {
     res.render('about');
 });
 
-// SETS PAGE
-app.get('/sets', (req, res) => {
-
-    const setsSQL = `SELECT id, name, logo, symbol, cardCountTotal, cardCountOfficial from sets; `;
-
-    connection.query(setsSQL, (err, result) => {
-        if (err) throw err;
-        res.render("sets", { setlist: result });
-    });
-});
-
-app.get('/filter', (req, res) => {
-    const filter = req.query.sort;
-
-    const burgersSQL = `SELECT id, name, logo, symbol, cardCountTotal, cardCountOfficial from sets ORDER BY ${filter}; `;
-
-    connection.query(burgersSQL, (err, result) => {
-        if (err) throw err;
-        res.render('sets', { setlist: result });
-    });
-});
-
+// Server Listening
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
