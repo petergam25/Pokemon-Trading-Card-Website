@@ -30,75 +30,82 @@
 
     <%- include('../partials/header.ejs') %>
 
-        <h1>SETS PAGE</h1>
-        
-        <hr>
+        <main class="my-3">
+            <div class="container">
+                <!-- Search bar with filter retention -->
+                <form action="/sets" method="GET" class="d-flex">
+                    <input class="form-control me-2" type="text" id="search" name="query" placeholder="Search for sets"
+                        value="<%= currentQuery %>">
 
-        <!-- Search bar with filter retention -->
-        <form action="/sets" method="GET" class = "d-flex">
-            <input class = "form-control me-2" type="text" id="search" name="query" placeholder="Search for sets" value="<%= currentQuery %>">
+                    <!-- Hidden input field to retain filter -->
+                    <input type="hidden" name="sort" value="<%= currentSort %>">
+                    <input type="hidden" name="order" value="<%= currentOrder %>">
 
-            <!-- Hidden input field to retain filter -->
-            <input type="hidden" name="sort" value="<%= currentSort %>">
-            <input type="hidden" name="order" value="<%= currentOrder %>">
+                    <button class="btn btn-outline-success" type="submit">Search</button>
+                </form>
 
-            <button class = "btn btn-outline-success" type="submit">Search</button>
-        </form>
+                <h4 id="setsCount"></h4>
 
-        <h4 id="setsCount"></h4>
+                <div class="row">
+                    <div class="col-md-auto d-flex align-items-center">
+                        <!-- Added d-flex and align-items-center classes -->
+                        <label for="sortBy" class="form-label me-3">Sort by:</label>
+                        <!-- Added me-3 class for margin -->
+                        <select class="form-select" id="sortBy" aria-label="Default select example">
+                            <option value="name">Name</option>
+                            <option value="series_ID">Series</option>
+                            <option value="releaseDate">Release Date</option>
+                        </select>
+                    </div>
+                    <div class="col-md-auto d-flex align-items-center">
+                        <!-- Added d-flex and align-items-center classes -->
+                        <label for="sortOrder" class="form-label me-3">Order:</label>
+                        <!-- Added me-3 class for margin -->
+                        <select class="form-select" id="sortOrder" aria-label="Default select example">
+                            <option value="asc">Ascending</option>
+                            <option value="desc">Descending</option>
+                        </select>
+                    </div>
+                </div>
 
-        <div class="row">
-            <div class="col-md-auto d-flex align-items-center"> <!-- Added d-flex and align-items-center classes -->
-                <label for="sortBy" class="form-label me-3">Sort by:</label> <!-- Added me-3 class for margin -->
-                <select class="form-select" id="sortBy" aria-label="Default select example">
-                    <option value="name">Name</option>
-                    <option value="series_ID">Series</option>
-                    <option value="releaseDate">Release Date</option>
-                </select>
-            </div>
-            <div class="col-md-auto d-flex align-items-center"> <!-- Added d-flex and align-items-center classes -->
-                <label for="sortOrder" class="form-label me-3">Order:</label> <!-- Added me-3 class for margin -->
-                <select class="form-select" id="sortOrder" aria-label="Default select example">
-                    <option value="asc">Ascending</option>
-                    <option value="desc">Descending</option>
-                </select>
-            </div>
-        </div>
+                <hr>
 
-        <hr>
-
-        <div class="container">
-            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-                <% setlist.forEach((set)=> { %>
-                    <div class="col mb-4">
-                        <div class="card h-100">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <div class="d-flex pr-3 align-items-center">
-                                    <% if (set.symbol) { %>
-                                        <img src="<%= set.symbol %>" alt="Symbol" class="symbol-img mr-2">
-                                        <% } %>
-                                            <h5 class="card-title mb-0 pr-3">
-                                                <%= set.name %>
-                                            </h5>
+                <div class="container">
+                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+                        <% setlist.forEach((set)=> { %>
+                            <div class="col mb-4">
+                                <div class="card h-100">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <div class="d-flex pr-3 align-items-center">
+                                            <% if (set.symbol) { %>
+                                                <img src="<%= set.symbol %>" alt="Symbol" class="symbol-img mr-2">
+                                                <% } %>
+                                                    <h5 class="card-title mb-0 pr-3">
+                                                        <%= set.name %>
+                                                    </h5>
+                                        </div>
+                                    </div>
+                                    <div class="card-img-wrapper p-3">
+                                        <img src="<%= set.logo %>" class="card-img card-img-max-height"
+                                            alt="<%= set.name %> Logo">
+                                    </div>
+                                    <div class="card-body d-flex flex-column justify-content-between">
+                                        <p class="card-text">
+                                            <span>Total Cards: <%= set.cardCountTotal %></span><br>
+                                            <span>Release Date: <%= set.releaseDate %></span>
+                                        </p>
+                                        <!-- Inside the card body in sets.ejs -->
+                                        <a href="/sets/<%= set.id %>" class="btn btn-primary mt-auto">View Set</a>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="card-img-wrapper p-3">
-                                <img src="<%= set.logo %>" class="card-img card-img-max-height"
-                                    alt="<%= set.name %> Logo">
-                            </div>
-                            <div class="card-body d-flex flex-column justify-content-between">
-                                <p class="card-text">
-                                    <span>Total Cards: <%= set.cardCountTotal %></span><br>
-                                    <span>Release Date: <%= set.releaseDate %></span>
-                                </p>
-                                <!-- Inside the card body in sets.ejs -->
-                                <a href="/sets/<%= set.id %>" class="btn btn-primary mt-auto">View Set</a>
-                            </div>
-                        </div>
+                            <% }); %>
                     </div>
-                    <% }); %>
+                </div>
             </div>
-        </div>
+        </main>
+
+
 
         <%- include('../partials/footer.ejs') %>
 

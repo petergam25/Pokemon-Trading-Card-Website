@@ -26,11 +26,15 @@
     <!-- Include header if needed -->
     <%- include('../partials/header.ejs') %>
 
-    <h1>Series Details</h1>
-    <h2><%= series.name %></h2>
+    <header class="mt-3">
+        <div class="container">
+            <p class="fs-2"><%= series.name %> Series</p>
+        </div>
+    </header>
+
     <!-- Render cards for each set -->
     <div class="container">
-        <div class="row">
+        <div class="row row-cols-4">
             <% sets.forEach((set) => { %>
                 <div class="col mb-4">
                     <div class="card h-100">
