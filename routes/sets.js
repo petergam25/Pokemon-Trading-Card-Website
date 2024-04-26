@@ -6,45 +6,57 @@ const connection = require('../database'); // Import database connection
 router.get('/', (req, res) => {
 
     const query = req.query.query;
-    const sort = req.query.sort;
-    const order = req.query.order;
+    const sort = req.query.sort || 'series_ID';
+    const order = req.query.order || 'ASC'; // Default order to ASC
 
-    // Define the base SQL query for sets
+    // Define the base SQL queries
     let setsSQL = 'SELECT * FROM sets';
+    let seriesSQL = `
+        SELECT DISTINCT series.* 
+        FROM series 
+        JOIN sets ON series.id = sets.series_ID 
+        WHERE sets.name LIKE '%${query}%'
+        ORDER BY series.id
+    `;
 
-    // Check if there's a search query
+    // Sort by
+    let setsSortSQL = ` ORDER BY ${sort}`;
+
+    if (sort === 'series_ID'){
+        setsSortSQL = ` ORDER BY releaseDate`;
+    }
+
+    // Order by
+    let setsOrderSQL = '';
+    if (order.toUpperCase() === 'DESC') {
+        setsOrderSQL = ` DESC`;  // Append DESC if order is DESC
+        seriesSQL += 'DESC';
+    } else {
+        setsOrderSQL = ` ASC`;   // Append ASC if order is ASC or any other value
+        seriesSQL += ' ASC';
+    }
+
+    // If there is a search query
     if (query) {
-        const searchQuery = `%${query}%`;
-        setsSQL += ` WHERE name LIKE '${searchQuery}'`; // Add search condition
-    }
-
-    // Check if there's a sort
-    if (sort) {
-        setsSQL += ` ORDER BY ${sort}`; // Add sort condition
+        setsSQL = setsSQL + ` WHERE name LIKE '%${query}%'` + setsSortSQL + setsOrderSQL;
     } else {
-        setsSQL += ` ORDER BY series_ID`;
+        setsSQL = setsSQL + setsSortSQL + setsOrderSQL;
     }
 
-    // Check if there's an order and it's valid (asc or desc)
-    if (order && (order.toLowerCase() === 'asc' || order.toLowerCase() === 'desc')) {
-        setsSQL += ` ${order.toUpperCase()}`; // Add ASC or DESC to the sort condition
-    } else {
-        setsSQL += ' ASC'; // Default to ascending order if order parameter is invalid or null
-    }
-
-    console.log('Query: ', query);
-    console.log('Sort: ', sort);
-    console.log('Order: ', order);
-
-    console.log(setsSQL);
+    console.log('Sets SQL: ', setsSQL);
+    console.log('Series SQL: ', seriesSQL);
 
     // Execute the final SQL query
-    connection.query(setsSQL, (err, result) => {
+    connection.query(setsSQL, (err, setList) => {
         if (err) throw err;
-        res.render('sets/sets', { setlist: result, currentQuery: query, currentSort: sort, currentOrder: order }); // Pass currentFilter to the view
+
+        connection.query(seriesSQL, (err, seriesList) => {
+            if (err) throw err;
+            res.render('sets/sets', { setlist: setList, seriesList: seriesList, currentQuery: query, currentSort: sort, currentOrder: order }); // Pass currentFilter to the view
+        });
+
     });
 });
-
 
 // SET DETAILS PAGE
 router.get('/:setId', (req, res) => {

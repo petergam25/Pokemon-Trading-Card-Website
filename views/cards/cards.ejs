@@ -30,11 +30,9 @@
 
     <%- include('../partials/header.ejs') %>
 
-        <h1>CARDS PAGE</h1>
-
         <div class="container">
             <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-                <% cardsList.forEach((card)=> { %>
+                <% cardsList.slice(0, limit).forEach((card) => { %>
                     <div class="col mb-4">
                         <div class="card h-100">
                             <div class="card-header d-flex justify-content-between align-items-center">
