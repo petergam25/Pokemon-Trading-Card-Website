@@ -74,22 +74,39 @@ router.post('/register', (req, res) => {
     });
 });
 
-
-
-
-
-
-
 // SIGN-IN PAGE
 router.get('/sign-in', (req, res) => {
 
     res.render("account/sign-in")
 });
 
+// SETTINGS PAGE
+router.get('/settings', (req, res) => {
+    const sessionobj = req.session;
+
+    console.log(sessionobj.authen)
+
+    if (sessionobj.authen) {
+        console.log('Authenticated session detected');
+        const uid = sessionobj.authen;
+        const user = `SELECT * FROM users WHERE user_ID = "${uid}" `;
+
+        connection.query(user, (err, row) => {
+            const firstrow = row[0];
+            res.render('dashboard', {userdata:firstrow});
+        });
+    } else {
+        console.log('Unauthorized access to settings page.');
+        res.status(403).send('Unauthorized');
+    }
+});
+
+
 // SIGN-IN
 router.post('/sign-in', (req, res) => {
     const useremail = req.body.email;
     console.log(useremail);
+    console.log(req.session);
 
     const checkuser = `SELECT * FROM users WHERE email = "${useremail}" `;
 
@@ -97,11 +114,16 @@ router.post('/sign-in', (req, res) => {
         if (err) throw err;
         const numRows = rows.length;
 
+        console.log('Matching usernames: ',rows)
+
         if (numRows > 0) {
             const sessionobj = req.session;
-            sessionobj.authen = rows[0].id;
+            console.log('rows',rows[0].user_ID);
 
-            console.log('Login Successful');
+            sessionobj.authen = rows[0].user_ID;
+
+            console.log('Login Successful: ',sessionobj);
+            console.log('end of session');
             res.redirect('/');
         } else {
             console.log('Login Unsuccessful');
