@@ -18,7 +18,7 @@ router.get('/register', (req, res) => {
     req.session.email = '';
 
     // Render the register page with required variables
-    res.render("account/register", { errorMessage, displayName, email });
+    res.render("account/register", { isAuthenticated: req.session.authenticated, errorMessage, displayName, email });
 });
 
 
@@ -42,7 +42,7 @@ router.post('/register', (req, res) => {
         if (rows.length > 0) {
             const errorMessage = 'Display Name already in use.';
             // Pass displayName and email to retain entered values
-            return res.render('account/register', { errorMessage, displayName, email });
+            return res.render('account/register', { isAuthenticated: req.session.authenticated, errorMessage, displayName, email });
         }
 
         // Proceed to check email
@@ -57,7 +57,7 @@ router.post('/register', (req, res) => {
             if (rows.length > 0) {
                 const errorMessage = 'Email address already registered.';
                 // Pass displayName and email to retain entered values
-                return res.render('account/register', { errorMessage, displayName, email });
+                return res.render('account/register', { isAuthenticated: req.session.authenticated, errorMessage, displayName, email });
             }
 
             // If neither displayName nor email exists, proceed to insert new user
@@ -77,24 +77,26 @@ router.post('/register', (req, res) => {
 // SIGN-IN PAGE
 router.get('/sign-in', (req, res) => {
 
-    req.session.isLoggedIn = true;
-    res.render("account/sign-in")
+    res.render("account/sign-in", { isAuthenticated: req.session.authenticated })
+});
+
+// SIGN-IN PAGE
+router.get('/logout', (req, res) => {
+    req.session.authenticated = false;
+    res.redirect('/');
 });
 
 // SETTINGS PAGE
 router.get('/settings', (req, res) => {
-    const sessionobj = req.session;
 
-    console.log(sessionobj.authen)
-
-    if (sessionobj.authen) {
+    if (req.session.authenticated) {
         console.log('Authenticated session detected');
-        const uid = sessionobj.authen;
+        const uid = req.session.user;
         const user = `SELECT * FROM users WHERE user_ID = "${uid}" `;
 
         connection.query(user, (err, row) => {
             const firstrow = row[0];
-            res.render('dashboard', {userdata:firstrow});
+            res.render('dashboard', { isAuthenticated: req.session.authenticated, userdata: firstrow });
         });
     } else {
         console.log('Unauthorized access to settings page.');
@@ -115,15 +117,15 @@ router.post('/sign-in', (req, res) => {
         if (err) throw err;
         const numRows = rows.length;
 
-        console.log('Matching usernames: ',rows)
+        console.log('Matching user profiles: ', rows)
 
         if (numRows > 0) {
-            const sessionobj = req.session;
-            console.log('rows',rows[0].user_ID);
+            console.log('User exists on row: ', rows[0].user_ID);
 
-            sessionobj.authen = rows[0].user_ID;
+            req.session.authenticated = true;
+            req.session.user = rows[0].user_ID;
 
-            console.log('Login Successful: ',sessionobj);
+            console.log('Login Successful: ', req.session);
             console.log('end of session');
             res.redirect('/');
         } else {

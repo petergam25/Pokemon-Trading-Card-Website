@@ -31,20 +31,26 @@ const accountRoutes = require('./routes/account');
 
 // Mount routes
 app.use('/cards', cardsRoutes);
-app.use('/sets', setsRoutes); 
-app.use('/series', seriesRoutes); 
+app.use('/sets', setsRoutes);
+app.use('/series', seriesRoutes);
 app.use('/account', accountRoutes);
 
 // HOME PAGE
 app.get('/', (req, res) => {
-    const isLoggedIn = req.session.isLoggedIn || false;
-    console.log(isLoggedIn);
-    res.render('home');
+    console.log(req.session)
+    console.log(req.session.authenticated);
+    res.render('home', { isAuthenticated: req.session.authenticated });
 });
 
 // ABOUT PAGE
 app.get('/dashboard', (req, res) => {
-    res.render('dashboard');
+    const uid = req.session.user;
+    const user = `SELECT * FROM users WHERE user_ID = "${uid}" `;
+
+    connection.query(user, (err, row) => {
+        const firstrow = row[0];
+        res.render('dashboard', { isAuthenticated: req.session.authenticated, userdata: firstrow });
+    });
 });
 
 // Server Listening

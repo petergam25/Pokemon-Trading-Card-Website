@@ -35,7 +35,7 @@ router.get('/', (req, res) => {
 
         connection.query(seriesSQL, [`%${query}%`], (err, seriesList) => {
             if (err) throw err;
-            res.render('sets/sets', { setlist: setList, seriesList: seriesList, currentQuery: query, currentSort: sort, currentOrder: order }); // Pass currentFilter to the view
+            res.render('sets/sets', { isAuthenticated: req.session.isAuthenticated,setlist: setList, seriesList: seriesList, currentQuery: query, currentSort: sort, currentOrder: order }); // Pass currentFilter to the view
         });
 
     });
