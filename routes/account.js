@@ -21,8 +21,6 @@ router.get('/register', (req, res) => {
     res.render("account/register", { isAuthenticated: req.session.authenticated, errorMessage, displayName, email });
 });
 
-
-
 // REGISTER
 router.post('/register', (req, res) => {
     const { displayName, email, password } = req.body;
@@ -32,6 +30,7 @@ router.post('/register', (req, res) => {
 
     // Check if displayName already exists in the database
     const checkDisplayNameQuery = 'SELECT * FROM users WHERE displayName = ?';
+
     connection.query(checkDisplayNameQuery, [displayName], (err, rows) => {
         if (err) {
             console.error(err);
@@ -80,31 +79,6 @@ router.get('/sign-in', (req, res) => {
     res.render("account/sign-in", { isAuthenticated: req.session.authenticated })
 });
 
-// SIGN-IN PAGE
-router.get('/logout', (req, res) => {
-    req.session.authenticated = false;
-    res.redirect('/');
-});
-
-// SETTINGS PAGE
-router.get('/settings', (req, res) => {
-
-    if (req.session.authenticated) {
-        console.log('Authenticated session detected');
-        const uid = req.session.user;
-        const user = `SELECT * FROM users WHERE user_ID = "${uid}" `;
-
-        connection.query(user, (err, row) => {
-            const firstrow = row[0];
-            res.render('dashboard', { isAuthenticated: req.session.authenticated, userdata: firstrow });
-        });
-    } else {
-        console.log('Unauthorized access to settings page.');
-        res.status(403).send('Unauthorized');
-    }
-});
-
-
 // SIGN-IN
 router.post('/sign-in', (req, res) => {
     const useremail = req.body.email;
@@ -132,6 +106,60 @@ router.post('/sign-in', (req, res) => {
             console.log('Login Unsuccessful');
             res.redirect('/');
         }
+    });
+});
+
+// LOGOUT
+router.get('/logout', (req, res) => {
+    req.session.authenticated = false;
+    res.redirect('/');
+});
+
+// SETTINGS PAGE
+router.get('/settings', (req, res) => {
+
+    if (req.session.authenticated) {
+        console.log('Authenticated session detected');
+        const uid = req.session.user;
+        const user = `SELECT * FROM users WHERE user_ID = "${uid}" `;
+
+        connection.query(user, (err, row) => {
+            const firstrow = row[0];
+            res.render('account/settings', { isAuthenticated: req.session.authenticated, userdata: firstrow });
+        });
+    } else {
+        console.log('Unauthorized access to settings page.');
+        res.status(403).send('Unauthorized');
+    }
+});
+
+// Example route for updating display name
+router.post('/update-display-name', (req, res) => {
+    const userId = req.session.user; // Assuming you have user authentication and userId available in session
+    const { newDisplayName } = req.body; // Assuming new display name is sent in the request body
+
+    if (!userId || !newDisplayName) {
+        return res.status(400).send('Invalid data received');
+    }
+
+    // Update display name in the database
+    const updateDisplayNameQuery = 'UPDATE users SET displayName = ? WHERE user_ID = ?';
+
+    connection.query(updateDisplayNameQuery, [newDisplayName, userId], (err, result) => {
+        if (err) {
+            console.error('Error updating display name:', err);
+            console.log('Error');
+            return res.status(500).send('Failed to update display name');
+        }
+
+        console.log('Display name updated successfully');
+        const uid = req.session.user;
+        const user = `SELECT * FROM users WHERE user_ID = "${uid}" `;
+
+        connection.query(user, (err, row) => {
+            const firstrow = row[0];
+            res.render('account/settings', { isAuthenticated: req.session.authenticated, userdata: firstrow });
+        });
     });
 });
 
