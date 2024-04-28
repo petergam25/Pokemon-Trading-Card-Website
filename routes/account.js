@@ -32,7 +32,7 @@ router.post('/register', (req, res) => {
     if (password.length < 8) {
         const errorMessage = 'Password must be 8 characters or more.';
         return res.render('account/register', { isAuthenticated: req.session.authenticated, errorMessage, displayName, email });
-}
+    }
 
     // Check if displayName already exists in the database
     const checkDisplayNameQuery = 'SELECT * FROM users WHERE displayName = ?';
@@ -91,7 +91,9 @@ router.post('/register', (req, res) => {
 // SIGN-IN PAGE
 router.get('/sign-in', (req, res) => {
 
-    res.render("account/sign-in", { isAuthenticated: req.session.authenticated })
+    const errorMessage = '';
+
+    res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage })
 });
 
 // SIGN-IN
@@ -103,7 +105,8 @@ router.post('/sign-in', (req, res) => {
     connection.query(checkUserQuery, [useremail], async (err, rows) => {
         if (err) {
             console.error(err);
-            return res.status(500).send('Login failed. Please try again.');
+            const errorMessage = 'User not found';
+            res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage })
         }
 
         const numRows = rows.length;
@@ -115,20 +118,23 @@ router.post('/sign-in', (req, res) => {
             try {
                 // Compare the entered password with the hashed password from the database
                 const passwordMatch = await bcrypt.compare(userpassword, hashedPasswordFromDB);
-                
+
                 if (passwordMatch) {
                     req.session.authenticated = true;
                     req.session.user = rows[0].user_ID;
                     res.redirect('/');
                 } else {
-                    res.status(401).send('Invalid email or password');
+                    const errorMessage = 'Invalid password.';
+                    res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage })
                 }
             } catch (error) {
                 console.error('Error comparing passwords:', error);
-                res.status(500).send('Login failed. Please try again.');
+                const errorMessage = 'Login failed. Please try again.';
+                res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage })
             }
         } else {
-            res.status(404).send('User not found');
+            const errorMessage = 'User not found.';
+            res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage })
         }
     });
 });

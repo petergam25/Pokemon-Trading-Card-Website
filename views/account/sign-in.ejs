@@ -23,6 +23,13 @@
         <main class="my-3">
             <div class="container">
                 <form name="sign-in_form" action="/account/sign-in" method="POST">
+
+                    <% if (errorMessage) { %>
+                        <div class="alert alert-danger" role="alert">
+                            <%= errorMessage %>
+                        </div>
+                        <% } %>
+
                     <div class="mb-3">
                         <label for="email" class="form-label fw-semibold">Email</label>
                         <input type="email" class="form-control" id="email" name="email" required>
