@@ -1,9 +1,10 @@
 // Import Required Modules
 const express = require('express');
+const sessions = require('express-session');
 const path = require('path');
 const connection = require('./database'); // Import database connection
 const cookieParser = require('cookie-parser');
-const sessions = require('express-session');
+const bcrypt = require('bcrypt');
 const oneHour = 1000 * 60 * 60 * 1;
 
 // Create Express app

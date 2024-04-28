@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const connection = require('../database'); // Import database connection
+const bcrypt = require('bcrypt');
 
 // REGISTER PAGE
 router.get('/register', (req, res) => {
@@ -28,10 +29,15 @@ router.post('/register', (req, res) => {
     req.session.displayName = displayName;
     req.session.email = email;
 
+    if (password.length < 8) {
+        const errorMessage = 'Password must be 8 characters or more.';
+        return res.render('account/register', { isAuthenticated: req.session.authenticated, errorMessage, displayName, email });
+}
+
     // Check if displayName already exists in the database
     const checkDisplayNameQuery = 'SELECT * FROM users WHERE displayName = ?';
 
-    connection.query(checkDisplayNameQuery, [displayName], (err, rows) => {
+    connection.query(checkDisplayNameQuery, [displayName], async (err, rows) => {
         if (err) {
             console.error(err);
             return res.status(500).send('Registration failed. Please try again.');
@@ -46,7 +52,7 @@ router.post('/register', (req, res) => {
 
         // Proceed to check email
         const checkEmailQuery = 'SELECT * FROM users WHERE email = ?';
-        connection.query(checkEmailQuery, [email], (err, rows) => {
+        connection.query(checkEmailQuery, [email], async (err, rows) => {
             if (err) {
                 console.error(err);
                 return res.status(500).send('Registration failed. Please try again.');
@@ -59,19 +65,28 @@ router.post('/register', (req, res) => {
                 return res.render('account/register', { isAuthenticated: req.session.authenticated, errorMessage, displayName, email });
             }
 
-            // If neither displayName nor email exists, proceed to insert new user
-            const insertUserQuery = 'INSERT INTO users (displayName, email, password) VALUES (?, ?, ?)';
-            connection.query(insertUserQuery, [displayName, email, password], (err, result) => {
-                if (err) {
-                    console.error(err);
-                    return res.status(500).send('Registration failed. Please try again.');
-                }
-                console.log('Registration successful!');
-                res.redirect('/account/sign-in');
-            });
+            try {
+                // Hash the password using bcrypt
+                const hashedPassword = await bcrypt.hash(password, 10); // 10 is the saltRounds value
+
+                // If neither displayName nor email exists, proceed to insert new user with hashed password
+                const insertUserQuery = 'INSERT INTO users (displayName, email, password) VALUES (?, ?, ?)';
+                connection.query(insertUserQuery, [displayName, email, hashedPassword], (err, result) => {
+                    if (err) {
+                        console.error(err);
+                        return res.status(500).send('Registration failed. Please try again.');
+                    }
+                    console.log('Registration successful!');
+                    res.redirect('/account/sign-in');
+                });
+            } catch (error) {
+                console.error('Error hashing password:', error);
+                return res.status(500).send('Registration failed. Please try again.');
+            }
         });
     });
 });
+
 
 // SIGN-IN PAGE
 router.get('/sign-in', (req, res) => {
@@ -82,32 +97,42 @@ router.get('/sign-in', (req, res) => {
 // SIGN-IN
 router.post('/sign-in', (req, res) => {
     const useremail = req.body.email;
-    console.log(useremail);
-    console.log(req.session);
+    const userpassword = req.body.password; // Retrieve entered password from the request body
 
-    const checkuser = `SELECT * FROM users WHERE email = "${useremail}" `;
+    const checkUserQuery = 'SELECT * FROM users WHERE email = ?';
+    connection.query(checkUserQuery, [useremail], async (err, rows) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Login failed. Please try again.');
+        }
 
-    connection.query(checkuser, (err, rows) => {
-        if (err) throw err;
         const numRows = rows.length;
 
-        console.log('Matching user profiles: ', rows)
-
         if (numRows > 0) {
-            console.log('User exists on row: ', rows[0].user_ID);
+            // User found, now compare passwords
+            const hashedPasswordFromDB = rows[0].password;
 
-            req.session.authenticated = true;
-            req.session.user = rows[0].user_ID;
-
-            console.log('Login Successful: ', req.session);
-            console.log('end of session');
-            res.redirect('/');
+            try {
+                // Compare the entered password with the hashed password from the database
+                const passwordMatch = await bcrypt.compare(userpassword, hashedPasswordFromDB);
+                
+                if (passwordMatch) {
+                    req.session.authenticated = true;
+                    req.session.user = rows[0].user_ID;
+                    res.redirect('/');
+                } else {
+                    res.status(401).send('Invalid email or password');
+                }
+            } catch (error) {
+                console.error('Error comparing passwords:', error);
+                res.status(500).send('Login failed. Please try again.');
+            }
         } else {
-            console.log('Login Unsuccessful');
-            res.redirect('/');
+            res.status(404).send('User not found');
         }
     });
 });
+
 
 // LOGOUT
 router.get('/logout', (req, res) => {
