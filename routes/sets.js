@@ -5,52 +5,35 @@ const connection = require('../database'); // Import database connection
 // Combined Route for Default, Search, and Filter
 router.get('/', (req, res) => {
 
-    const query = req.query.query;
-    const sort = req.query.sort || 'series_ID';
+    const query = req.query.query || ''; // Default query to blank
+    const sort = req.query.sort || 'series_ID'; // Default sort to Series_ID
     const order = req.query.order || 'ASC'; // Default order to ASC
 
     // Define the base SQL queries
-    let setsSQL = 'SELECT * FROM sets';
+    let setsSQL = `
+        SELECT * 
+        FROM sets 
+        WHERE name LIKE ?
+        ORDER BY ${sort}
+        ${order}
+    `;
+        
     let seriesSQL = `
         SELECT DISTINCT series.* 
         FROM series 
         JOIN sets ON series.id = sets.series_ID 
-        WHERE sets.name LIKE '%${query}%'
+        WHERE sets.name LIKE ?
         ORDER BY series.id
+        ${order}
     `;
-
-    // Sort by
-    let setsSortSQL = ` ORDER BY ${sort}`;
-
-    if (sort === 'series_ID'){
-        setsSortSQL = ` ORDER BY releaseDate`;
-    }
-
-    // Order by
-    let setsOrderSQL = '';
-    if (order.toUpperCase() === 'DESC') {
-        setsOrderSQL = ` DESC`;  // Append DESC if order is DESC
-        seriesSQL += 'DESC';
-    } else {
-        setsOrderSQL = ` ASC`;   // Append ASC if order is ASC or any other value
-        seriesSQL += ' ASC';
-    }
-
-    // If there is a search query
-    if (query) {
-        setsSQL = setsSQL + ` WHERE name LIKE '%${query}%'` + setsSortSQL + setsOrderSQL;
-    } else {
-        setsSQL = setsSQL + setsSortSQL + setsOrderSQL;
-    }
 
     console.log('Sets SQL: ', setsSQL);
     console.log('Series SQL: ', seriesSQL);
 
-    // Execute the final SQL query
-    connection.query(setsSQL, (err, setList) => {
+    connection.query(setsSQL, [`%${query}%`], (err, setList) => {
         if (err) throw err;
 
-        connection.query(seriesSQL, (err, seriesList) => {
+        connection.query(seriesSQL, [`%${query}%`], (err, seriesList) => {
             if (err) throw err;
             res.render('sets/sets', { setlist: setList, seriesList: seriesList, currentQuery: query, currentSort: sort, currentOrder: order }); // Pass currentFilter to the view
         });

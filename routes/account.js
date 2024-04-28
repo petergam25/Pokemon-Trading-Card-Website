@@ -77,6 +77,7 @@ router.post('/register', (req, res) => {
 // SIGN-IN PAGE
 router.get('/sign-in', (req, res) => {
 
+    req.session.isLoggedIn = true;
     res.render("account/sign-in")
 });
 

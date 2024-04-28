@@ -37,6 +37,8 @@ app.use('/account', accountRoutes);
 
 // HOME PAGE
 app.get('/', (req, res) => {
+    const isLoggedIn = req.session.isLoggedIn || false;
+    console.log(isLoggedIn);
     res.render('home');
 });
 
