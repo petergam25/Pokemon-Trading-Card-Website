@@ -1,0 +1,29 @@
+General:
+    Improve overall look of website
+    Code modularity
+
+Account:
+    Lookup users by user_ID
+    displayName stored in sesssion
+    Remove isAuthenticated and replace with undefined check on user_ID
+    Finish account settings page with changing password, deleting data etc
+
+Database:
+    Add pokemon data for abilities etc
+    If a card has missing entries for and key values, skip adding to the Database
+    Add tables for collection of cards and link to users, comments on collections
+    Add tables for like/wishlist of other member cards ???
+
+Collections:
+    Allow user to create their own collections
+    Like / comment on other collections
+
+Cards:
+    Compare cards
+
+Trading system:
+    ???
+
+API:
+    Create API
+    Have database queries go through API instead
