@@ -5,153 +5,150 @@ const bcrypt = require('bcrypt');
 
 // REGISTER PAGE
 router.get('/register', (req, res) => {
-    // Initialize errorMessage
+    // Initialize blank error message
     const errorMessage = '';
-
-    // Get displayName from session or set default value
-    const displayName = req.session.displayName || '';
-
-    // Get email from session or set default value
-    const email = req.session.email || '';
-
-    // Clear session variables after using them
-    req.session.displayName = '';
-    req.session.email = '';
-
-    // Render the register page with required variables
-    res.render("account/register", { isAuthenticated: req.session.authenticated, user: req.session.user, errorMessage, displayName, email });
+    res.render("account/register", { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
 });
 
 // REGISTER
 router.post('/register', (req, res) => {
     const { displayName, email, password } = req.body;
+    console.log(req.body.displayName);
+    console.log(req.body.email);
+    console.log(req.body.password);
 
-    req.session.displayName = displayName;
-    req.session.email = email;
-
+    // Check display name meets specification
     if (displayName.length < 5 || displayName.length > 10) {
+        console.log(req.body.displayName);
+        console.log(req.body.email);
+        console.log(req.body.password);
         const errorMessage = 'Display Name must be 5 to 10 characters long.';
-        return res.render('account/register', { isAuthenticated: req.session.authenticated, user: req.session.user, errorMessage, displayName, email });
+        return res.render('account/register', { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
+
     }
 
+    // Check password meets specification
     if (password.length < 8) {
         const errorMessage = 'Password must be 8 characters or more.';
-        return res.render('account/register', { isAuthenticated: req.session.authenticated, user: req.session.user, errorMessage, displayName, email });
+        return res.render('account/register', { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
     }
 
     // Check if displayName already exists in the database
     const checkDisplayNameQuery = 'SELECT * FROM users WHERE displayName = ?';
-
     connection.query(checkDisplayNameQuery, [displayName], async (err, rows) => {
+        // General error from database query
         if (err) {
-            console.error(err);
-            return res.status(500).send('Registration failed. Please try again.');
+            const errorMessage = 'Registration failed during display name check. Please try again.';
+            return res.render('account/register', { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
         }
 
         // Check if displayName already exists
         if (rows.length > 0) {
             const errorMessage = 'Display Name already in use.';
-            // Pass displayName and email to retain entered values
-            return res.render('account/register', { isAuthenticated: req.session.authenticated, user: req.session.user, errorMessage, displayName, email });
+            return res.render('account/register', { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
         }
 
-        // Proceed to check email
+        // Proceed to check if email already exists in the database
         const checkEmailQuery = 'SELECT * FROM users WHERE email = ?';
         connection.query(checkEmailQuery, [email], async (err, rows) => {
+            // General error from database query
             if (err) {
-                console.error(err);
-                return res.status(500).send('Registration failed. Please try again.');
+                const errorMessage = 'Registration failed during email check. Please try again.';
+                return res.render('account/register', { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
             }
 
             // Check if email already exists
             if (rows.length > 0) {
                 const errorMessage = 'Email address already registered.';
-                // Pass displayName and email to retain entered values
-                return res.render('account/register', { isAuthenticated: req.session.authenticated, user: req.session.user, errorMessage, displayName, email });
+                return res.render('account/register', { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
             }
 
             try {
                 // Hash the password using bcrypt
                 const hashedPassword = await bcrypt.hash(password, 10); // 10 is the saltRounds value
 
-                // If neither displayName nor email exists, proceed to insert new user with hashed password
+                // Insert new user with hashed password
                 const insertUserQuery = 'INSERT INTO users (displayName, email, password) VALUES (?, ?, ?)';
                 connection.query(insertUserQuery, [displayName, email, hashedPassword], (err, result) => {
                     if (err) {
-                        console.error(err);
-                        return res.status(500).send('Registration failed. Please try again.');
+                        const errorMessage = 'Registration failed during database insertion. Please try again.';
+                        return res.render('account/register', { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
                     }
+
+                    // Successful registration
                     console.log('Registration successful!');
-                    // Redirect to sign-in page after successful registration
-                    res.redirect('/account/sign-in');
+                    const errorMessage = '';
+                    return res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage });
                 });
             } catch (error) {
                 console.error('Error hashing password:', error);
-                return res.status(500).send('Registration failed. Please try again.');
+                const errorMessage = 'Registration failed during password hasing. Please try again.';
+                return res.render('account/register', { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
             }
         });
     });
 });
 
-
 // SIGN-IN PAGE
 router.get('/sign-in', (req, res) => {
-
+    // Initialise blank error message
     const errorMessage = '';
-
-    res.render("account/sign-in", { isAuthenticated: req.session.authenticated, user: req.session.user, errorMessage })
+    res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage })
 });
 
 // SIGN-IN
 router.post('/sign-in', async (req, res) => {
     const useremail = req.body.email;
-    const userpassword = req.body.password; // Retrieve entered password from the request body
+    const userpassword = req.body.password;
 
+    // Find user in database
     const checkUserQuery = 'SELECT * FROM users WHERE email = ?';
     connection.query(checkUserQuery, [useremail], async (err, rows) => {
         if (err) {
-            console.error(err);
             const errorMessage = 'User not found';
-            return res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage });
+            return res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage });
         }
 
-        const numRows = rows.length;
-
-        if (numRows > 0) {
-            // User found, now compare passwords
+        if (rows.length > 0) {
+            // User found
             const hashedPasswordFromDB = rows[0].password;
 
+            // Compare the entered password with the hashed password from the database
             try {
                 console.log('Trying to compare...');
-                // Compare the entered password with the hashed password from the database
                 const passwordMatch = await bcrypt.compare(userpassword, hashedPasswordFromDB);
 
                 if (passwordMatch) {
-                    req.session.authenticated = true;
+                    // Successful login
                     req.session.user = rows[0].user_ID;
-                    req.session.displayName = rows[0].displayName || ''; // Set displayName to empty string if undefined
-                    console.log(req.session.displayName);
+                    req.session.displayName = rows[0].displayName;
+                    console.log('Display name:', req.session.displayName);
+                    console.log('User ID: ', req.session.user);
+                    console.log('Successful login.')
                     return res.redirect('/');
                 } else {
+                    // Passwords do not match
                     const errorMessage = 'Invalid password.';
-                    return res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage });
-                }                
+                    return res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage });
+                }
             } catch (error) {
                 console.error('Error comparing passwords:', error);
                 const errorMessage = 'Login failed. Please try again.';
-                return res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage });
+                return res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage });
             }
-        } else { 
+        } else {
+            // User not found
             const errorMessage = 'User not found.';
-            return res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage });
+            return res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage });
         }
     });
 });
 
 // LOGOUT
 router.get('/logout', (req, res) => {
-    req.session.authenticated = false;
-    res.render('home', { isAuthenticated: req.session.authenticated, user: req.session.user });
+    req.session.user = '';
+    req.session.displayName = '';
+    res.render('home', { user: req.session.user, displayName: req.session.displayName });
 });
 
 // SETTINGS PAGE
@@ -164,7 +161,7 @@ router.get('/settings', (req, res) => {
 
         connection.query(user, (err, row) => {
             const firstrow = row[0];
-            res.render('account/settings', { isAuthenticated: req.session.authenticated, user: req.session.user, userdata: firstrow });
+            res.render('account/settings', { user: req.session.user, userdata: firstrow });
         });
     } else {
         console.log('Unauthorized access to settings page.');
@@ -200,7 +197,7 @@ router.post('/update-display-name', (req, res) => {
         connection.query(user, (err, row) => {
             const firstrow = row[0];
             console.log(firstrow);
-            res.render('account/settings', { isAuthenticated: req.session.authenticated, user: req.session.user, userdata: firstrow });
+            res.render('account/settings', { user: req.session.user, userdata: firstrow });
         });
     });
 });

@@ -4,7 +4,6 @@ const sessions = require('express-session');
 const path = require('path');
 const connection = require('./database'); // Import database connection
 const cookieParser = require('cookie-parser');
-const bcrypt = require('bcrypt');
 const oneHour = 1000 * 60 * 60 * 1;
 
 // Create Express app
@@ -38,20 +37,16 @@ app.use('/account', accountRoutes);
 
 // HOME PAGE
 app.get('/', (req, res) => {
-    console.log(req.session)
-    console.log(req.session.user);
-    res.render('home', { isAuthenticated: req.session.authenticated, user: req.session.user });
+    const user = req.session.user;
+    const displayName = req.session.displayName;
+    res.render('home', { user, displayName });
 });
 
 // ABOUT PAGE
 app.get('/dashboard', (req, res) => {
-    const uid = req.session.user;
-    const user = `SELECT * FROM users WHERE user_ID = "${uid}" `;
-
-    connection.query(user, (err, row) => {
-        const firstrow = row[0];
-        res.render('dashboard', { isAuthenticated: req.session.authenticated, user: req.session.user, userdata: firstrow });
-    });
+    const user = req.session.user;
+    const displayName = req.session.displayName;
+    res.render('dashboard', { user, displayName });
 });
 
 // Server Listening

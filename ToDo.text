@@ -13,6 +13,7 @@ Database:
     If a card has missing entries for and key values, skip adding to the Database
     Add tables for collection of cards and link to users, comments on collections
     Add tables for like/wishlist of other member cards ???
+    Normalisation of existing tables
 
 Collections:
     Allow user to create their own collections
@@ -20,6 +21,8 @@ Collections:
 
 Cards:
     Compare cards
+    Card page
+    Sets page
 
 Trading system:
     ???

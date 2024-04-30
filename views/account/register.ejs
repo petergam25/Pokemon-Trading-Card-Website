@@ -34,7 +34,7 @@
                             <div class="mb-3">
                                 <label for="displayName" class="form-label fw-semibold">Display Name</label>
                                 <input type="text" class="form-control" id="displayName" name="displayName"
-                                    value="<%= displayName || '' %>" required>
+                                    value="<%= attemptedDisplayName || '' %>" required>
                                     <div id="displayNameHelp" class="form-text">Your display name must be between 5 and 10 characters.
                                     </div>
                             </div>
@@ -42,7 +42,7 @@
                             <div class="mb-3">
                                 <label for="email" class="form-label fw-semibold">Email</label>
                                 <input type="email" class="form-control" id="email" name="email"
-                                    value="<%= email || '' %>" required>
+                                    value="<%= attemptedEmail || '' %>" required>
                                 <div id="emailHelp" class="form-text">We'll never share your email with anyone else.
                                 </div>
                             </div>
