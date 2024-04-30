@@ -40,7 +40,7 @@ app.use('/account', accountRoutes);
 app.get('/', (req, res) => {
     console.log(req.session)
     console.log(req.session.authenticated);
-    res.render('home', { isAuthenticated: req.session.authenticated });
+    res.render('home', { isAuthenticated: req.session.authenticated, displayName: req.session.displayName });
 });
 
 // ABOUT PAGE
@@ -50,7 +50,7 @@ app.get('/dashboard', (req, res) => {
 
     connection.query(user, (err, row) => {
         const firstrow = row[0];
-        res.render('dashboard', { isAuthenticated: req.session.authenticated, userdata: firstrow });
+        res.render('dashboard', { isAuthenticated: req.session.authenticated, displayName: req.session.displayName });
     });
 });
 

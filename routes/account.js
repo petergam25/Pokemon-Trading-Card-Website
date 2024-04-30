@@ -97,7 +97,7 @@ router.get('/sign-in', (req, res) => {
 });
 
 // SIGN-IN
-router.post('/sign-in', (req, res) => {
+router.post('/sign-in', async (req, res) => {
     const useremail = req.body.email;
     const userpassword = req.body.password; // Retrieve entered password from the request body
 
@@ -106,7 +106,7 @@ router.post('/sign-in', (req, res) => {
         if (err) {
             console.error(err);
             const errorMessage = 'User not found';
-            res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage })
+            return res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage });
         }
 
         const numRows = rows.length;
@@ -116,29 +116,31 @@ router.post('/sign-in', (req, res) => {
             const hashedPasswordFromDB = rows[0].password;
 
             try {
+                console.log('Trying to compare...');
                 // Compare the entered password with the hashed password from the database
                 const passwordMatch = await bcrypt.compare(userpassword, hashedPasswordFromDB);
 
                 if (passwordMatch) {
                     req.session.authenticated = true;
                     req.session.user = rows[0].user_ID;
-                    res.redirect('/');
+                    req.session.displayName = rows[0].displayName || ''; // Set displayName to empty string if undefined
+                    console.log(req.session.displayName);
+                    return res.redirect('/');
                 } else {
                     const errorMessage = 'Invalid password.';
-                    res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage })
-                }
+                    return res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage });
+                }                
             } catch (error) {
                 console.error('Error comparing passwords:', error);
                 const errorMessage = 'Login failed. Please try again.';
-                res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage })
+                return res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage });
             }
-        } else {
+        } else { 
             const errorMessage = 'User not found.';
-            res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage })
+            return res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage });
         }
     });
 });
-
 
 // LOGOUT
 router.get('/logout', (req, res) => {
