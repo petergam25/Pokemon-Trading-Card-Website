@@ -2,7 +2,6 @@
 const express = require('express');
 const sessions = require('express-session');
 const path = require('path');
-const connection = require('./database'); // Import database connection
 const cookieParser = require('cookie-parser');
 const oneHour = 1000 * 60 * 60 * 1;
 
@@ -23,6 +22,7 @@ app.use(sessions({
     resave: false
 }));
 
+
 // Import Routes
 const cardsRoutes = require('./routes/cards');
 const setsRoutes = require('./routes/sets');
@@ -37,16 +37,27 @@ app.use('/account', accountRoutes);
 
 // HOME PAGE
 app.get('/', (req, res) => {
-    const user = req.session.user;
-    const displayName = req.session.displayName;
-    res.render('home', { user, displayName });
+
+    if (req.session.user) {
+        res.redirect('dashboard');
+    } else {
+        const user = req.session.user;
+        const displayName = req.session.displayName;
+        res.render('home', { user, displayName });
+    }
 });
 
 // ABOUT PAGE
 app.get('/dashboard', (req, res) => {
-    const user = req.session.user;
-    const displayName = req.session.displayName;
-    res.render('dashboard', { user, displayName });
+
+    if (req.session.user) {
+        const user = req.session.user;
+        const displayName = req.session.displayName;
+        res.render('dashboard', { user, displayName });
+    } else {
+        res.send('You must be logged in to view this page.');
+    }
+
 });
 
 // Server Listening

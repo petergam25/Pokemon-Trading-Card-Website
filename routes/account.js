@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const connection = require('../database'); // Import database connection
 const bcrypt = require('bcrypt');
+const { body, validationResult } = require('express-validator');
 
 // REGISTER PAGE
 router.get('/register', (req, res) => {
@@ -11,27 +12,20 @@ router.get('/register', (req, res) => {
 });
 
 // REGISTER
-router.post('/register', (req, res) => {
+router.post('/register', [
+    body('displayName').trim().isLength({ min: 5, max: 10 }).withMessage('Display Name must be 5 to 10 characters long.'),
+    body('email').trim().isEmail().normalizeEmail().withMessage('Invalid email format.'),
+    body('password').trim().isLength({ min: 8 }).withMessage('Password must be 8 characters or more.')
+], async (req, res) => {
+
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        const errorMessage = errors.array()[0].msg;
+        return res.render('account/register', { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
+    }
+
     const { displayName, email, password } = req.body;
-    console.log(req.body.displayName);
-    console.log(req.body.email);
-    console.log(req.body.password);
-
-    // Check display name meets specification
-    if (displayName.length < 5 || displayName.length > 10) {
-        console.log(req.body.displayName);
-        console.log(req.body.email);
-        console.log(req.body.password);
-        const errorMessage = 'Display Name must be 5 to 10 characters long.';
-        return res.render('account/register', { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
-
-    }
-
-    // Check password meets specification
-    if (password.length < 8) {
-        const errorMessage = 'Password must be 8 characters or more.';
-        return res.render('account/register', { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
-    }
 
     // Check if displayName already exists in the database
     const checkDisplayNameQuery = 'SELECT * FROM users WHERE displayName = ?';
@@ -76,7 +70,7 @@ router.post('/register', (req, res) => {
                     }
 
                     // Successful registration
-                    console.log('Registration successful!');
+                    console.log('New user registered: ', [displayName, email, hashedPassword]);
                     const errorMessage = '';
                     return res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage });
                 });
@@ -96,19 +90,31 @@ router.get('/sign-in', (req, res) => {
     res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage })
 });
 
-// SIGN-IN
-router.post('/sign-in', async (req, res) => {
+//SIGN-IN
+router.post('/sign-in', [
+    body('email').isEmail().normalizeEmail().withMessage('Invalid email format.'),
+    body('password').isLength({ min: 8 }).withMessage('Password must be 8 characters or more.')
+], async (req, res) => {
+
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).render('account/sign-in', { user: req.session.user, displayName: req.session.displayName, errorMessage: errors.array()[0].msg });
+    }
+
     const useremail = req.body.email;
     const userpassword = req.body.password;
 
     // Find user in database
     const checkUserQuery = 'SELECT * FROM users WHERE email = ?';
     connection.query(checkUserQuery, [useremail], async (err, rows) => {
+        //General error from database query
         if (err) {
-            const errorMessage = 'User not found';
+            const errorMessage = 'Error querying database.';
             return res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage });
         }
 
+        // Check if user exists
         if (rows.length > 0) {
             // User found
             const hashedPasswordFromDB = rows[0].password;
@@ -125,7 +131,7 @@ router.post('/sign-in', async (req, res) => {
                     console.log('Display name:', req.session.displayName);
                     console.log('User ID: ', req.session.user);
                     console.log('Successful login.')
-                    return res.redirect('/');
+                    return res.redirect('/dashboard');
                 } else {
                     // Passwords do not match
                     const errorMessage = 'Invalid password.';
@@ -148,58 +154,66 @@ router.post('/sign-in', async (req, res) => {
 router.get('/logout', (req, res) => {
     req.session.user = '';
     req.session.displayName = '';
-    res.render('home', { user: req.session.user, displayName: req.session.displayName });
+    res.redirect('/');
 });
 
 // SETTINGS PAGE
 router.get('/settings', (req, res) => {
+    console.log(req.session.displayName);
+    console.log(req.session.user);
 
-    if (req.session.authenticated) {
-        console.log('Authenticated session detected');
+    if (req.session.user) {
+        const errorMessage = '';
         const uid = req.session.user;
-        const user = `SELECT * FROM users WHERE displayName = "${uid}" `;
-
-        connection.query(user, (err, row) => {
-            const firstrow = row[0];
-            res.render('account/settings', { user: req.session.user, userdata: firstrow });
-        });
-    } else {
-        console.log('Unauthorized access to settings page.');
-        res.status(403).send('Unauthorized');
-    }
-});
-
-// Example route for updating display name
-router.post('/update-display-name', (req, res) => {
-    const userId = req.session.user; // Assuming you have user authentication and userId available in session
-    const { newDisplayName } = req.body; // Assuming new display name is sent in the request body
-
-    if (!userId || !newDisplayName) {
-        return res.status(400).send('Invalid data received');
-    }
-
-    // Update display name in the database
-    const updateDisplayNameQuery = 'UPDATE users SET displayName = ? WHERE displayName = ?';
-
-    connection.query(updateDisplayNameQuery, [newDisplayName, userId], (err, result) => {
-        if (err) {
-            console.error('Error updating display name:', err);
-            console.log('Error');
-            return res.status(500).send('Failed to update display name');
-        }
-
-        req.session.user = newDisplayName;
-        console.log('Display name updated successfully');
-        const uid = req.session.user;
-        const user = `SELECT * FROM users WHERE displayName = "${uid}" `;
-        console.log(user);
+        const user = `SELECT * FROM users WHERE user_ID = "${uid}" `;
 
         connection.query(user, (err, row) => {
             const firstrow = row[0];
             console.log(firstrow);
-            res.render('account/settings', { user: req.session.user, userdata: firstrow });
+            res.render('account/settings', { user: req.session.user, displayName: req.session.displayName, userdata: firstrow, errorMessage });
         });
-    });
+    } else {
+        console.log('Unauthorized access to settings page.');
+        res.status(403).send('You must be logged in to view this page.');
+    }
 });
+
+// CHANGE DISPLAY NAME
+router.post('/update-display-name', [
+    body('newDisplayName').trim().isLength({ min: 5, max: 10 }).withMessage('Display Name must be 5 to 10 characters long.')
+], async (req, res) => {
+
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+
+        const uid = req.session.user;
+        const user = `SELECT * FROM users WHERE user_ID = "${uid}" `;
+        connection.query(user, (err, row) => {
+            const firstrow = row[0];
+            console.log(firstrow);
+            return res.status(400).render('account/settings', { user: req.session.user, displayName: req.session.displayName, userdata: firstrow, errorMessage: errors.array()[0].msg });
+        });
+    } else {
+
+        const userId = req.session.user;
+        const newDisplayName = req.body.newDisplayName;
+
+        // Proceed with updating display name in the database
+        const updateDisplayNameQuery = 'UPDATE users SET displayName = ? WHERE user_ID = ?';
+
+        connection.query(updateDisplayNameQuery, [newDisplayName, userId], (err, result) => {
+            if (err) {
+                console.error('Error updating display name:', err);
+                return res.status(500).send('Failed to update display name');
+            }
+
+            req.session.displayName = newDisplayName; // Update session display name
+            console.log('Display name updated successfully');
+            res.redirect('/account/settings'); // Redirect to settings page or another appropriate page
+        });
+    }
+});
+
 
 module.exports = router;

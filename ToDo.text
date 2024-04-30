@@ -1,12 +1,14 @@
 General:
     Improve overall look of website
     Code modularity
+    Do I need to pass user to all of my pages?
+    Understand javascript better
+    Add graphics and info for home page
 
 Account:
-    Lookup users by user_ID
-    displayName stored in sesssion
-    Remove isAuthenticated and replace with undefined check on user_ID
     Finish account settings page with changing password, deleting data etc
+    Registration successful message
+    Client side restriction on invalid entries
 
 Database:
     Add pokemon data for abilities etc
@@ -14,6 +16,9 @@ Database:
     Add tables for collection of cards and link to users, comments on collections
     Add tables for like/wishlist of other member cards ???
     Normalisation of existing tables
+
+Dashboard:
+    Add dashboard UI and functionality
 
 Collections:
     Allow user to create their own collections
