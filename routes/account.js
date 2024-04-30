@@ -19,7 +19,7 @@ router.get('/register', (req, res) => {
     req.session.email = '';
 
     // Render the register page with required variables
-    res.render("account/register", { isAuthenticated: req.session.authenticated, errorMessage, displayName, email });
+    res.render("account/register", { isAuthenticated: req.session.authenticated, user: req.session.user, errorMessage, displayName, email });
 });
 
 // REGISTER
@@ -29,9 +29,14 @@ router.post('/register', (req, res) => {
     req.session.displayName = displayName;
     req.session.email = email;
 
+    if (displayName.length < 5 || displayName.length > 10) {
+        const errorMessage = 'Display Name must be 5 to 10 characters long.';
+        return res.render('account/register', { isAuthenticated: req.session.authenticated, user: req.session.user, errorMessage, displayName, email });
+    }
+
     if (password.length < 8) {
         const errorMessage = 'Password must be 8 characters or more.';
-        return res.render('account/register', { isAuthenticated: req.session.authenticated, errorMessage, displayName, email });
+        return res.render('account/register', { isAuthenticated: req.session.authenticated, user: req.session.user, errorMessage, displayName, email });
     }
 
     // Check if displayName already exists in the database
@@ -47,7 +52,7 @@ router.post('/register', (req, res) => {
         if (rows.length > 0) {
             const errorMessage = 'Display Name already in use.';
             // Pass displayName and email to retain entered values
-            return res.render('account/register', { isAuthenticated: req.session.authenticated, errorMessage, displayName, email });
+            return res.render('account/register', { isAuthenticated: req.session.authenticated, user: req.session.user, errorMessage, displayName, email });
         }
 
         // Proceed to check email
@@ -62,7 +67,7 @@ router.post('/register', (req, res) => {
             if (rows.length > 0) {
                 const errorMessage = 'Email address already registered.';
                 // Pass displayName and email to retain entered values
-                return res.render('account/register', { isAuthenticated: req.session.authenticated, errorMessage, displayName, email });
+                return res.render('account/register', { isAuthenticated: req.session.authenticated, user: req.session.user, errorMessage, displayName, email });
             }
 
             try {
@@ -77,6 +82,7 @@ router.post('/register', (req, res) => {
                         return res.status(500).send('Registration failed. Please try again.');
                     }
                     console.log('Registration successful!');
+                    // Redirect to sign-in page after successful registration
                     res.redirect('/account/sign-in');
                 });
             } catch (error) {
@@ -93,7 +99,7 @@ router.get('/sign-in', (req, res) => {
 
     const errorMessage = '';
 
-    res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage })
+    res.render("account/sign-in", { isAuthenticated: req.session.authenticated, user: req.session.user, errorMessage })
 });
 
 // SIGN-IN
@@ -106,7 +112,7 @@ router.post('/sign-in', (req, res) => {
         if (err) {
             console.error(err);
             const errorMessage = 'User not found';
-            res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage })
+            res.render("account/sign-in", { isAuthenticated: req.session.authenticated, user: req.session.user, errorMessage })
         }
 
         const numRows = rows.length;
@@ -121,20 +127,20 @@ router.post('/sign-in', (req, res) => {
 
                 if (passwordMatch) {
                     req.session.authenticated = true;
-                    req.session.user = rows[0].user_ID;
+                    req.session.user = rows[0].displayName;
                     res.redirect('/');
                 } else {
                     const errorMessage = 'Invalid password.';
-                    res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage })
+                    res.render("account/sign-in", { isAuthenticated: req.session.authenticated, user: req.session.user, errorMessage })
                 }
             } catch (error) {
                 console.error('Error comparing passwords:', error);
                 const errorMessage = 'Login failed. Please try again.';
-                res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage })
+                res.render("account/sign-in", { isAuthenticated: req.session.authenticated, user: req.session.user, errorMessage })
             }
         } else {
             const errorMessage = 'User not found.';
-            res.render("account/sign-in", { isAuthenticated: req.session.authenticated, errorMessage })
+            res.render("account/sign-in", { isAuthenticated: req.session.authenticated, user: req.session.user, errorMessage })
         }
     });
 });
@@ -143,7 +149,7 @@ router.post('/sign-in', (req, res) => {
 // LOGOUT
 router.get('/logout', (req, res) => {
     req.session.authenticated = false;
-    res.redirect('/');
+    res.render('home', { isAuthenticated: req.session.authenticated, user: req.session.user });
 });
 
 // SETTINGS PAGE
@@ -152,11 +158,11 @@ router.get('/settings', (req, res) => {
     if (req.session.authenticated) {
         console.log('Authenticated session detected');
         const uid = req.session.user;
-        const user = `SELECT * FROM users WHERE user_ID = "${uid}" `;
+        const user = `SELECT * FROM users WHERE displayName = "${uid}" `;
 
         connection.query(user, (err, row) => {
             const firstrow = row[0];
-            res.render('account/settings', { isAuthenticated: req.session.authenticated, userdata: firstrow });
+            res.render('account/settings', { isAuthenticated: req.session.authenticated, user: req.session.user, userdata: firstrow });
         });
     } else {
         console.log('Unauthorized access to settings page.');
@@ -174,7 +180,7 @@ router.post('/update-display-name', (req, res) => {
     }
 
     // Update display name in the database
-    const updateDisplayNameQuery = 'UPDATE users SET displayName = ? WHERE user_ID = ?';
+    const updateDisplayNameQuery = 'UPDATE users SET displayName = ? WHERE displayName = ?';
 
     connection.query(updateDisplayNameQuery, [newDisplayName, userId], (err, result) => {
         if (err) {
@@ -183,13 +189,16 @@ router.post('/update-display-name', (req, res) => {
             return res.status(500).send('Failed to update display name');
         }
 
+        req.session.user = newDisplayName;
         console.log('Display name updated successfully');
         const uid = req.session.user;
-        const user = `SELECT * FROM users WHERE user_ID = "${uid}" `;
+        const user = `SELECT * FROM users WHERE displayName = "${uid}" `;
+        console.log(user);
 
         connection.query(user, (err, row) => {
             const firstrow = row[0];
-            res.render('account/settings', { isAuthenticated: req.session.authenticated, userdata: firstrow });
+            console.log(firstrow);
+            res.render('account/settings', { isAuthenticated: req.session.authenticated, user: req.session.user, userdata: firstrow });
         });
     });
 });
