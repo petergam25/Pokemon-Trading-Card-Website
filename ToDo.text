@@ -6,9 +6,7 @@ General:
     Add graphics and info for home page
 
 Account:
-    Finish account settings page with changing password, deleting data etc
-    Registration successful message
-    Client side restriction on invalid entries
+    Finish account settings page with deleting data
 
 Database:
     Add pokemon data for abilities etc

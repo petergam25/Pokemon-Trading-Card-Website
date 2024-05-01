@@ -114,6 +114,8 @@ router.post('/sign-in', [
             return res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage });
         }
 
+        console.log(rows);
+
         // Check if user exists
         if (rows.length > 0) {
             // User found
@@ -121,7 +123,6 @@ router.post('/sign-in', [
 
             // Compare the entered password with the hashed password from the database
             try {
-                console.log('Trying to compare...');
                 const passwordMatch = await bcrypt.compare(userpassword, hashedPasswordFromDB);
 
                 if (passwordMatch) {
@@ -159,18 +160,16 @@ router.get('/logout', (req, res) => {
 
 // SETTINGS PAGE
 router.get('/settings', (req, res) => {
-    console.log(req.session.displayName);
-    console.log(req.session.user);
 
     if (req.session.user) {
         const errorMessage = '';
+        const successMessage = '';
         const uid = req.session.user;
         const user = `SELECT * FROM users WHERE user_ID = "${uid}" `;
 
         connection.query(user, (err, row) => {
             const firstrow = row[0];
-            console.log(firstrow);
-            res.render('account/settings', { user: req.session.user, displayName: req.session.displayName, userdata: firstrow, errorMessage });
+            res.render('account/settings', { user: req.session.user, displayName: req.session.displayName, userdata: firstrow, errorMessage, successMessage });
         });
     } else {
         console.log('Unauthorized access to settings page.');
@@ -178,42 +177,216 @@ router.get('/settings', (req, res) => {
     }
 });
 
-// CHANGE DISPLAY NAME
+// UPDATE DISPLAY NAME
 router.post('/update-display-name', [
-    body('newDisplayName').trim().isLength({ min: 5, max: 10 }).withMessage('Display Name must be 5 to 10 characters long.')
+    body('newDisplayName').trim().isLength({ min: 5, max: 10 }).withMessage('Display Name must be 5 to 10 characters long.'),
+    body('currentPassword').trim().notEmpty().withMessage('Current Password is required.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        // Validation errors
+        renderSettingsWithError(req, res, errors.array()[0].msg, '');
+
+    } else {
+        const userId = req.session.user;
+        const newDisplayName = req.body.newDisplayName;
+        const currentPassword = req.body.currentPassword;
+
+        // Check if the current password matches the user's actual password
+        const checkPasswordQuery = 'SELECT * FROM users WHERE user_ID = ?';
+        connection.query(checkPasswordQuery, [userId], async (err, rows) => {
+            if (err) {
+                console.error('Error checking password:', err);
+                return res.status(500).send('Error checking password', '');
+            }
+            if (rows.length === 0) {
+                // User not found
+                renderSettingsWithError(req, res, 'User not found.', '');
+            }
+
+            const hashedPasswordFromDB = rows[0].password;
+
+            // Compare the entered password with the hashed password from the database using bcrypt
+            try {
+                const passwordMatch = await bcrypt.compare(currentPassword, hashedPasswordFromDB);
+                if (passwordMatch) {
+
+                    // Check if the new display name already exists
+                    const checkDisplayNameQuery = 'SELECT * FROM users WHERE displayName = ? AND user_ID != ?';
+                    connection.query(checkDisplayNameQuery, [newDisplayName, userId], async (err, rows) => {
+                        if (err) {
+                            console.error('Error checking display name:', err);
+                            return res.status(500).send('Error checking display name');
+                        }
+
+                        if (rows.length > 0) {
+                            // Display name already exists
+                            renderSettingsWithError(req, res, 'Display name already exists.', '');
+
+                        } else {
+                            // Proceed with updating display name
+                            const updateDisplayNameQuery = 'UPDATE users SET displayName = ? WHERE user_ID = ?';
+                            connection.query(updateDisplayNameQuery, [newDisplayName, userId], (err, result) => {
+                                if (err) {
+                                    console.error('Error updating display name:', err);
+                                    return res.status(500).send('Failed to update display name');
+                                }
+                                req.session.displayName = newDisplayName;
+                                renderSettingsWithError(req, res, '', 'Display name updated successfully!');
+                            });
+                        }
+                    });
+                } else {
+                    // Passwords do not match
+                    renderSettingsWithError(req, res, 'Incorrect password.', '');
+                }
+            } catch (error) {
+                // Error comparing passwords
+                renderSettingsWithError(req, res, 'An error occurred. Please try again.', '');
+            }
+        });
+    }
+});
+
+// CHANGE EMAIL
+router.post('/update-email', [
+    body('newEmail').trim().isEmail().normalizeEmail().withMessage('Invalid email format.'),
+    body('currentPassword').trim().notEmpty().withMessage('Current Password is required.')
+], async (req, res) => {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        // Validation errors
+        renderSettingsWithError(req, res, errors.array()[0].msg, '');
+    } else {
+        const userId = req.session.user;
+        const newEmail = req.body.newEmail;
+        const currentPassword = req.body.currentPassword;
+
+        // Check if the current password matches the user's actual password
+        const checkPasswordQuery = 'SELECT * FROM users WHERE user_ID = ?';
+        connection.query(checkPasswordQuery, [userId], async (err, rows) => {
+            if (err) {
+                console.error('Error checking password:', err);
+                return res.status(500).send('Error checking password');
+            }
+            if (rows.length === 0) {
+                // User not found
+                renderSettingsWithError(req, res, 'User not found.', '');
+            }
+
+            const hashedPasswordFromDB = rows[0].password;
+
+            // Compare the entered password with the hashed password from the database using bcrypt
+            try {
+                const passwordMatch = await bcrypt.compare(currentPassword, hashedPasswordFromDB);
+                if (passwordMatch) {
+
+                    // Check if the new email already exists
+                    const checkEmailQuery = 'SELECT * FROM users WHERE email = ? AND user_ID != ?';
+                    connection.query(checkEmailQuery, [newEmail, userId], (err, rows) => {
+                        if (err) {
+                            console.error('Error checking email:', err);
+                            return res.status(500).send('Error checking email');
+                        }
+
+                        if (rows.length > 0) {
+                            // Email already exists
+                            renderSettingsWithError(req, res, 'Email address already in use.', '');
+                        } else {
+                            // Proceed with updating email in the database
+                            const updateEmailQuery = 'UPDATE users SET email = ? WHERE user_ID = ?';
+                            connection.query(updateEmailQuery, [newEmail, userId], (err, result) => {
+                                if (err) {
+                                    console.error('Error updating email:', err);
+                                    return res.status(500).send('Failed to update email');
+                                }
+                                renderSettingsWithError(req, res, '', 'Email updated successfully!');
+                            });
+                        }
+                    });
+                } else {
+                    // Passwords do not match
+                    renderSettingsWithError(req, res, 'Incorrect password.', '');
+                }
+            } catch (error) {
+                // Error comparing passwords
+                renderSettingsWithError(req, res, 'An error occurred. Please try again.', '');
+            }
+        });
+    }
+});
+
+// UPDATE PASSWORD
+router.post('/update-password', [
+    body('currentPassword').trim().notEmpty().withMessage('Current Password is required.'),
+    body('newPassword').isLength({ min: 8 }).withMessage('Password must be 8 characters or more.')
 ], async (req, res) => {
 
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        // Validation errors
+        renderSettingsWithError(req, res, errors.array()[0].msg, '');
 
-        const uid = req.session.user;
-        const user = `SELECT * FROM users WHERE user_ID = "${uid}" `;
-        connection.query(user, (err, row) => {
-            const firstrow = row[0];
-            console.log(firstrow);
-            return res.status(400).render('account/settings', { user: req.session.user, displayName: req.session.displayName, userdata: firstrow, errorMessage: errors.array()[0].msg });
-        });
     } else {
-
         const userId = req.session.user;
-        const newDisplayName = req.body.newDisplayName;
+        const currentPassword = req.body.currentPassword;
+        const newPassword = req.body.newPassword;
 
-        // Proceed with updating display name in the database
-        const updateDisplayNameQuery = 'UPDATE users SET displayName = ? WHERE user_ID = ?';
-
-        connection.query(updateDisplayNameQuery, [newDisplayName, userId], (err, result) => {
+        // Check if the current password matches the user's actual password
+        const checkPasswordQuery = 'SELECT * FROM users WHERE user_ID = ?';
+        connection.query(checkPasswordQuery, [userId], async (err, rows) => {
             if (err) {
-                console.error('Error updating display name:', err);
-                return res.status(500).send('Failed to update display name');
+                console.error('Error checking password:', err);
+                return res.status(500).send('Error checking password');
             }
+            if (rows.length === 0) {
+                // User not found
+                renderSettingsWithError(req, res, 'User not found.', '');
+            };
 
-            req.session.displayName = newDisplayName; // Update session display name
-            console.log('Display name updated successfully');
-            res.redirect('/account/settings'); // Redirect to settings page or another appropriate page
+            const hashedPasswordFromDB = rows[0].password;
+
+            // Compare the entered password with the hashed password from the database using bcrypt
+            try {
+                const passwordMatch = await bcrypt.compare(currentPassword, hashedPasswordFromDB);
+                if (passwordMatch) {
+                    // Hash the new password before updating in the database
+                    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+                    // Proceed with updating password in the database
+                    const updatePasswordQuery = 'UPDATE users SET password = ? WHERE user_ID = ?';
+                    connection.query(updatePasswordQuery, [hashedNewPassword, userId], (err, result) => {
+                        if (err) {
+                            console.error('Error updating password:', err);
+                            return res.status(500).send('Failed to update password');
+                        }
+                        renderSettingsWithError(req, res, '', 'Password updated successfully!');
+                    });
+
+                } else {
+                    // Passwords do not match
+                    renderSettingsWithError(req, res, 'Incorrect password.', '');
+
+                }
+            } catch (error) {
+                // Error comparing passwords
+                renderSettingsWithError(req, res, 'An error occurred. Please try again.', '');
+
+            }
         });
     }
 });
 
+// Function to query user details and render settings page with error message
+function renderSettingsWithError(req, res, errorMessage, successMessage) {
+    const uid = req.session.user;
+    const userQuery = `SELECT * FROM users WHERE user_ID = "${uid}" `;
+    connection.query(userQuery, (err, row) => {
+        const firstrow = row[0];
+        return res.status(500).render('account/settings', { user: req.session.user, displayName: req.session.displayName, userdata: firstrow, errorMessage, successMessage });
+    });
+}
 
 module.exports = router;
