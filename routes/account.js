@@ -114,8 +114,6 @@ router.post('/sign-in', [
             return res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage });
         }
 
-        console.log(rows);
-
         // Check if user exists
         if (rows.length > 0) {
             // User found

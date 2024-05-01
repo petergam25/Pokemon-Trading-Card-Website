@@ -8,7 +8,8 @@ router.get('/', (req, res) => {
 
   connection.query(cardsSQL, (err, result) => {
     if (err) throw err;
-    res.render("cards/cards", { cardsList: result });
+    const limit = 51;
+    res.render("cards/cards", { cardsList: result, limit });
   });
 });
 

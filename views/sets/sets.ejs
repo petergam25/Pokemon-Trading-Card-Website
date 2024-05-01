@@ -11,7 +11,7 @@
     <!-- Add the following style section for card images -->
     <style>
         .card-img {
-            max-height: 100px;
+            max-height: 75px;
             max-width: 200px;
         }
 
@@ -29,38 +29,62 @@
     <%- include('../partials/header.ejs') %>
 
 
-        <main class="my-3">
+        <main class="mt-3">
 
             <div class="container">
-                <!-- Search bar with filter retention -->
-                <form action="/sets" method="GET" class="d-flex">
-                    <input class="form-control me-2" type="text" id="search" name="query" placeholder="Search for sets"
-                        value="<%= currentQuery %>">
 
-                    <!-- Hidden input field to retain filter -->
-                    <input type="hidden" name="sort" value="<%= currentSort %>">
-                    <input type="hidden" name="order" value="<%= currentOrder %>">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <form action="/sets" method="GET" class="d-flex">
+                            <input class="form-control me-2" type="text" id="search" name="query"
+                                placeholder="Search for sets" value="<%= currentQuery %>">
+                            <input type="hidden" name="sort" value="<%= currentSort %>">
+                            <input type="hidden" name="order" value="<%= currentOrder %>">
 
-                    <button class="btn btn-outline-success" type="submit">Search</button>
-                </form>
+                            <button class="btn btn-outline-success" type="submit">Search</button>
+                        </form>
+                    </div>
+                    <div class="col-auto">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+                            <label class="form-check-label" for="flexRadioDefault1">
+                                All
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2"
+                                checked>
+                            <label class="form-check-label" for="flexRadioDefault2">
+                                In collection
+                            </label>
+                        </div>
+                    </div>
+                </div>
 
-                <h4 id="setsCount"></h4>
+                <h4 class="mt-4" id="setsCount"></h4>
+
+                <hr>
 
                 <!-- Filters -->
-                <div class="row">
+                <div class="row align-items-center my-3">
                     <!-- Sort By -->
                     <div class="col-md-auto d-flex align-items-center">
-                        <label for="sortBy" class="form-label me-3">Sort by:</label>
-                        <select class="form-select" id="sortBy" aria-label="Default select example">
-                            <option value="name" selected>Name</option>
-                            <option value="series_ID">Series</option>
-                            <option value="releaseDate">Release Date</option>
-                        </select>
+                        <label for="sortBy" class="me-2">Sort by:</label>
+                        <div class="flex-grow-1">
+                            <select class="form-select" id="sortBy" aria-label="Default select example">
+                                <option value="name" selected>Name</option>
+                                <option value="series_ID">Series</option>
+                                <option value="releaseDate">Release Date</option>
+                            </select>
+                        </div>
                     </div>
+
 
                     <!-- Order by -->
                     <div class="col-md-auto d-flex align-items-center">
-                        <label for="sortOrder" class="form-label me-3">Order:</label>
+                        <label for="sortOrder" class="me-2">Order:</label>
                         <select class="form-select" id="sortOrder" aria-label="Default select example">
                             <option value="asc" selected>Ascending</option> <!-- Default option -->
                             <option value="desc">Descending</option>
@@ -69,29 +93,29 @@
 
                 </div>
 
-                <hr>
 
-                <div class="container">
+                <div>
                     <% if (currentSort==='series_ID' ) { %>
                         <% seriesList.forEach((series)=> { %>
-                            <h2>
-                                <%= series.name %>
-                            </h2> <!-- Display series title -->
-                            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+                            <h4 class=mt-3>
+                                <%= series.name %> Series
+                            </h4>
+                            
+                            <div class="row row-cols-1 row-cols-sm-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 row-cols-xxl-5 g-3">
                                 <% setlist.forEach((set)=> { %>
                                     <% if (set.series_ID===series.id) { %>
-                                        <div class="col mb-4">
+                                        <div class="col">
                                             <div class="card h-100">
                                                 <div
                                                     class="card-header d-flex justify-content-between align-items-center">
                                                     <div class="d-flex pr-3 align-items-center">
                                                         <% if (set.symbol) { %>
                                                             <img src="<%= set.symbol %>" alt="Symbol"
-                                                                class="symbol-img mr-2">
+                                                                class="symbol-img " style="height: 1em;">
                                                             <% } %>
-                                                                <h5 class="card-title mb-0 pr-3">
+                                                                <div class="fw-medium" href="/sets/<%= set.id %>">
                                                                     <%= set.name %>
-                                                                </h5>
+                                                                </div>
                                                     </div>
                                                 </div>
                                                 <div class="card-img-wrapper p-3">
@@ -100,11 +124,11 @@
                                                 </div>
                                                 <div class="card-body d-flex flex-column justify-content-between">
                                                     <p class="card-text">
-                                                        <span>Total Cards: <%= set.cardCountTotal %></span><br>
-                                                        <span>Release Date: <%= set.releaseDate %></span>
+                                                        <span><%= set.releaseDate %></span><br>
+                                                        <span>Total Cards: <%= set.cardCountTotal %></span>
                                                     </p>
                                                     <!-- Inside the card body in sets.ejs -->
-                                                    <a href="/sets/<%= set.id %>" class="btn btn-primary mt-auto">View
+                                                    <a href="/sets/<%= set.id %>" class="btn btn-outline-secondary mt-auto">View
                                                         Set</a>
                                                 </div>
                                             </div>
