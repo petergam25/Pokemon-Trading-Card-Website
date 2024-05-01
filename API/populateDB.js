@@ -126,21 +126,32 @@ async function insertCardsFromAPI() {
         const response = await axios.get('https://api.tcgdex.net/v2/en/cards/');
         const cardIds = response.data.map(card => card.id);
 
-        // Log card IDs for debugging
-        console.log('Cards IDs:', cardIds);
-
         // Iterate through card IDs to fetch detailed info
         for (const cardId of cardIds) {
             try {
                 // Fetch detailed info for each card ID from the second API
                 const detailedResponse = await axios.get(`https://api.tcgdex.net/v2/en/cards/${cardId}`);
+                const cardData = detailedResponse.data;
 
                 // Extract relevant data from detailed response
-                const { category, id, illustrator, image, name, rarity, description, level,
+                const {
+                    category,
+                    id,
+                    illustrator,
+                    image,
+                    name,
+                    rarity,
                     set: { id: setId },
-                    variants: { firstEdition, holo, normal, reverse, wPromo },
-                    dexId, hp, types, evolveFrom, stage, abilities, attacks, weaknesses, resistances,
-                    legal: { standard, expanded } } = detailedResponse.data;
+                    variants: { firstEdition, holo, normal, reverse },
+                    hp,
+                    types = [],
+                    evolveFrom,
+                    description,
+                    stage,
+                    attacks = [],
+                    weaknesses: { type, value },
+                    retreat,
+                } = cardData;
 
                 // Handle undefined fields
 
@@ -151,9 +162,14 @@ async function insertCardsFromAPI() {
                 const defaultImage = 'https://assets.tcgdex.net/en/base/base1/logo.webp';
                 const finalImage = modifiedImage || defaultImage;
 
+                const { weaknesses } = cardData;
+                const weaknessType = weaknesses && weaknesses.type ? weaknesses.type : '';
+                const weaknessValue = weaknesses && weaknesses.value ? weaknesses.value : '';
+
                 // Insert card into database
                 await connection.execute(
-                    `INSERT INTO cards (id, name, image, category, illustrator, rarity, variantsNormal, variantsReverse, variantsHolo, variantsFirstEdition, set_ID, hp, evolveFrom, description, level, stage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    `INSERT INTO cards (id, name, image, category, illustrator, rarity, variantsNormal, variantsReverse, variantsHolo, variantsFirstEdition, set_ID, hp, evolveFrom, description, stage, type, retreat, weakness_type, weakness_value) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                         id,
                         name,
@@ -161,19 +177,43 @@ async function insertCardsFromAPI() {
                         category || '',
                         illustrator || '',
                         rarity || '',
-                        normal || '',
-                        reverse || '',
-                        holo || '',
-                        firstEdition ? 1 : '',
-                        setId || '',
-                        hp || '',
+                        normal !== undefined ? normal : 0,
+                        reverse !== undefined ? reverse : 0,
+                        holo !== undefined ? holo : 0,
+                        firstEdition !== undefined ? firstEdition : 0,
+                        setId,
+                        hp !== undefined ? hp : 0,
                         evolveFrom || '',
                         description || '',
-                        level || '',
-                        stage || ''
+                        stage || '',
+                        types.join(',') || '',
+                        retreat || 0,
+                        weaknessType,
+                        weaknessValue,
                     ]
                 );
-                console.log('Inserted card:', { id, name });
+
+                for (const attack of attacks) {
+                    const { cost, name: attackName, effect, damage } = attack;
+
+                    // Check if cost is defined and is an array before joining
+                    const joinedCost = Array.isArray(cost) ? cost.join(',') : '';
+
+                    try {
+                        await connection.execute(
+                            `INSERT INTO pokemon_attacks (card_id, cost, attack_name, effect, damage) VALUES (?, ?, ?, ?, ?)`,
+                            [
+                                id,
+                                joinedCost,
+                                attackName,
+                                effect || '',
+                                damage || 0]
+                        );
+                    } catch (error) {
+                        console.error('Error inserting ability:', attack, error.message);
+                    }
+                }
+
 
             } catch (error) {
                 console.error('Error inserting card:', cardId, error.message);
@@ -204,5 +244,4 @@ async function insertCardsFromAPI() {
 //insertSetsFromAPI();
 insertCardsFromAPI();
 
-
-//node C:\Users\peter\Desktop\tradecard\API\populateDB.js
+//node C:\Users\peter\Documents\GitHub\tradecard\API\populateDB.js

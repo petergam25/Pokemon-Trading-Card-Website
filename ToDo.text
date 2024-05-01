@@ -9,10 +9,6 @@ Account:
     Finish account settings page with deleting data
 
 Database:
-    Add pokemon data for abilities etc
-    If a card has missing entries for and key values, skip adding to the Database
-    Add tables for collection of cards and link to users, comments on collections
-    Add tables for like/wishlist of other member cards ???
     Normalisation of existing tables
 
 Dashboard:
