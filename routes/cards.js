@@ -4,41 +4,52 @@ const connection = require('../database'); // Import database connection
 
 // CARDS
 router.get('/', (req, res) => {
+  const page = parseInt(req.query.page) || 1; // Default to page 1 if no query param provided
+  const limit = parseInt(req.query.limit) || 25; // Default to 20 if no query param provided
+  const offset = (page - 1) * limit; // Calculate the offset based on the page and limit
+
+  console.log('Page: ',page);
+  console.log('Limit: ',limit);
+  console.log('Offset: ',offset);
 
   const query = req.query.query || ''; // Default query to blank
-  const userSort = req.query.sort || 'Card name (A-Z)'; // Default sort to Series_ID
+  const sort = req.query.sort || 'name ASC'; // Default sort to Series_ID
 
-  let sort;
-  switch (userSort) {
-    case 'Card name (A-Z)':
-      sort = 'name ASC';
-      break;
+  // Query to count total records without applying limit and offset
+  const countSQL = `SELECT COUNT(*) AS totalCount FROM cards WHERE name LIKE ?`;
+  console.log(countSQL);
+  connection.query(countSQL, [`%${query}%`], (err, countResult) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Internal Server Error');
+    }
 
-    case 'Card name (Z-A)':
-      sort = 'name DESC';
-      break;
+    const totalRecords = countResult[0].totalCount; // Total records in the filtered result set
+    const totalPages = Math.ceil(totalRecords / limit);
 
-    case 'Rarity (asc)':
-      sort = 'rarity ASC';
-      break;
+    console.log('Total Records:', totalRecords);
+    console.log('Total Pages:', totalPages);
 
-    case 'Rarity (desc)':
-      sort = 'rarity DESC';
-      break;
+    // Query to fetch paginated data with limit and offset
+    let cardsSQL = `SELECT * FROM cards WHERE name LIKE ? ORDER BY ${sort} LIMIT ? OFFSET ?`;
+    console.log(cardsSQL);
+    connection.query(cardsSQL, [`%${query}%`, limit, offset], (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send('Internal Server Error');
+      }
 
-    default:
-      sort = 'name ASC';
-      break;
-  }
-
-  let cardsSQL = `SELECT * FROM cards WHERE name LIKE ? ORDER BY ${sort}`;
-
-  console.log(cardsSQL);
-
-  connection.query(cardsSQL, [`%${query}%`], (err, result) => {
-    if (err) throw err;
-    const limit = 51;
-    res.render("cards/cards", { cardsList: result, limit, currentQuery : query, currentSort : userSort });
+      // Render your page with the paginated data and total pages
+      res.render('cards/cards', {
+        cardsList: result,
+        limit,
+        currentQuery: query,
+        currentSort: sort,
+        currentPage: page,
+        totalPages,
+        totalRecords,
+      });
+    });
   });
 });
 
