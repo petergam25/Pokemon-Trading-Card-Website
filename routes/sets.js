@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const connection = require('../database'); // Import database connection
 
-// Combined Route for Default, Search, and Filter
+// SETS
 router.get('/', (req, res) => {
 
     const query = req.query.query || ''; // Default query to blank

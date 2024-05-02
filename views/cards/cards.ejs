@@ -38,44 +38,54 @@
 
         <div class="container">
 
-            <!-- Search bar with filter retention -->
-            <form action="/sets" method="GET" class="d-flex">
-                <input class="form-control me-2" type="text" id="search" name="query" placeholder="Search for sets"
-                    value="">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <form action="/sets" method="GET" class="d-flex">
+                        <input class="form-control me-2" type="text" id="search" name="query"
+                            placeholder="Search for sets" value="<%= currentQuery %>">
+                        <input type="hidden" name="sort" value="<%= currentSort %>">
 
-                <!-- Hidden input field to retain filter -->
-                <input type="hidden" name="sort" value="">
-                <input type="hidden" name="order" value="">
-
-                <button class="btn btn-outline-success" type="submit">Search</button>
-            </form>
-
-            <h4 id="setsCount"></h4>
-
-            <!-- Filters -->
-            <div class="row">
-                <!-- Sort By -->
-                <div class="col-md-auto d-flex align-items-center">
-                    <label for="sortBy" class="form-label me-3">Sort by:</label>
-                    <select class="form-select" id="sortBy" aria-label="Default select example">
-                        <option value="name" selected>Name</option>
-                        <option value="series_ID">Series</option>
-                        <option value="releaseDate">Release Date</option>
-                    </select>
+                        <button class="btn btn-outline-success" type="submit">Search</button>
+                    </form>
                 </div>
-
-                <!-- Order by -->
-                <div class="col-md-auto d-flex align-items-center">
-                    <label for="sortOrder" class="form-label me-3">Order:</label>
-                    <select class="form-select" id="sortOrder" aria-label="Default select example">
-                        <option value="asc" selected>Ascending</option> <!-- Default option -->
-                        <option value="desc">Descending</option>
-                    </select>
+                <div class="col-auto">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+                        <label class="form-check-label" for="flexRadioDefault1">
+                            All
+                        </label>
+                    </div>
                 </div>
-
+                <div class="col-auto">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2"
+                            checked>
+                        <label class="form-check-label" for="flexRadioDefault2">
+                            In collection
+                        </label>
+                    </div>
+                </div>
             </div>
 
+            <h4 class="mt-4" id="cardsCount"></h4>
+
             <hr>
+
+            <!-- Filters -->
+            <div class="row align-items-center my-3">
+                <!-- Sort By -->
+                <div class="col-md-auto d-flex align-items-center">
+                    <label for="sortBy" class="me-2">Sort by:</label>
+                    <div class="flex-grow-1">
+                        <select class="form-select" id="sortBy" aria-label="Default select example">
+                            <option value="name_ASC" selected>Card name (A-Z)</option>
+                            <option value="name_DESC">Card name (Z-A)</option>
+                            <option value="rarity_ASC">Rarity (asc)</option>
+                            <option value="rarity_DESC">Rarity (desc)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
 
             <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
                 <% cardsList.slice(0, limit).forEach((card)=> { %>
@@ -101,9 +111,42 @@
         </div>
 
         <%- include('../partials/footer.ejs') %>
+
+            <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+            <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+            <!-- Bootstrap Bundle with Popper.js -->
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
                 integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
                 crossorigin="anonymous"></script>
+
+            <script>
+                $(document).ready(function () {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const initialSort = urlParams.get('sort') || 'series_ID';
+                    const initialQuery = urlParams.get('query'); // Get initial query value
+
+                    $('#sortBy').val(initialSort);
+                    $('#search').val(initialQuery); // Set initial query value in the search box
+
+                    $('#sortBy').change(function () {
+                        const sortBy = $(this).val();
+                        const currentQuery = $('#search').val(); // Get current query value
+                        window.location.search = `?sort=${sortBy}&query=${currentQuery}`; // Include query in URL
+                    });
+
+                    // Function to update the sets count based on displayed sets
+                    function updateCardsCount() {
+                        const cardsCount = $('.row .col').length; // Get the number of sets displayed
+                        $('#cardsCount').text(`${cardsCount} Cards`); // Update the header text
+                    }
+
+                    // Call the function initially and whenever sets are updated
+                    updateCardsCount();
+                    $('#sortBy').change(updateCardsCount);
+                });
+
+
+            </script>
 </body>
 
 </html>

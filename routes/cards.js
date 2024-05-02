@@ -4,12 +4,41 @@ const connection = require('../database'); // Import database connection
 
 // CARDS
 router.get('/', (req, res) => {
-  const cardsSQL = `SELECT * FROM cards;`;
 
-  connection.query(cardsSQL, (err, result) => {
+  const query = req.query.query || ''; // Default query to blank
+  const userSort = req.query.sort || 'Card name (A-Z)'; // Default sort to Series_ID
+
+  let sort;
+  switch (userSort) {
+    case 'Card name (A-Z)':
+      sort = 'name ASC';
+      break;
+
+    case 'Card name (Z-A)':
+      sort = 'name DESC';
+      break;
+
+    case 'Rarity (asc)':
+      sort = 'rarity ASC';
+      break;
+
+    case 'Rarity (desc)':
+      sort = 'rarity DESC';
+      break;
+
+    default:
+      sort = 'name ASC';
+      break;
+  }
+
+  let cardsSQL = `SELECT * FROM cards WHERE name LIKE ? ORDER BY ${sort}`;
+
+  console.log(cardsSQL);
+
+  connection.query(cardsSQL, [`%${query}%`], (err, result) => {
     if (err) throw err;
     const limit = 51;
-    res.render("cards/cards", { cardsList: result, limit });
+    res.render("cards/cards", { cardsList: result, limit, currentQuery : query, currentSort : userSort });
   });
 });
 
