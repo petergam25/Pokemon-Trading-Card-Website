@@ -1,8 +1,6 @@
 General:
     Improve overall look of website
     Code modularity
-    Do I need to pass user to all of my pages?
-    Understand javascript better
     Add graphics and info for home page
     Make a footer
 
@@ -11,23 +9,30 @@ Account:
 
 Database:
     Normalisation of existing tables
-    Add table for collections etc
+    Add table for collections and wishlist
 
 Dashboard:
     Add dashboard UI and functionality
 
-Collections:
-    Allow user to create their own collections
-    Like / comment on other collections
+Collection:
+    Allow user to add card to their own Collection
+    Browse others collections
+    Comments on the collection
+    Like the collection
 
-Sets:
-    On small screen sort by and order by stack veritcally with no space
+Wishlist:
+    Allow user to add card to their wishlist
 
-Cards:
+Navbar:
+    Restructure links (browse, home, dashboard, my collection, 
+    browse collections)
+    
+
+Cards / Sets / Series:
     Compare cards
-    Card page
-    Sets page
     Filters for cards
+    Progress bars on sets, series
+    Opacity increase on owned cards (logged in)  
 
 Trading system:
     ???
