@@ -10,6 +10,7 @@ Account:
 
 Database:
     Normalisation of existing tables
+    Add table for collections etc
 
 Dashboard:
     Add dashboard UI and functionality
@@ -25,6 +26,7 @@ Cards:
     Compare cards
     Card page
     Sets page
+    Filters for cards
 
 Trading system:
     ???
@@ -33,5 +35,3 @@ API:
     Create API
     Have database queries go through API instead
 
-
-Revert test
