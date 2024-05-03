@@ -35,9 +35,8 @@ router.get('/', (req, res) => {
 
         connection.query(seriesSQL, [`%${query}%`], (err, seriesList) => {
             if (err) throw err;
-            res.render('sets/sets', { isAuthenticated: req.session.isAuthenticated,setlist: setList, seriesList: seriesList, currentQuery: query, currentSort: sort, currentOrder: order }); // Pass currentFilter to the view
+            res.render('sets/sets', { user: req.session.user, displayName: req.session.displayName, setlist: setList, seriesList: seriesList, currentQuery: query, currentSort: sort, currentOrder: order }); // Pass currentFilter to the view
         });
-
     });
 });
 
@@ -61,8 +60,8 @@ router.get('/:setId', (req, res) => {
 
                 // Render the set details page with the set data and card data
                 res.render('sets/setsdetails', {
-                    set: result[0], // Set details
-                    cardsInSet: cardsResult // Cards belonging to the series
+                    set: result[0],
+                    cardsInSet: cardsResult
                 });
             });
         }

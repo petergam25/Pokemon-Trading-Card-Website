@@ -1,73 +1,75 @@
 <!-- home.ejs -->
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Home</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-        <style>
-            .card-img {
-                height: 70px;
-                /* Adjust the height as needed */
-                object-fit: fill;
-                /* Ensure the image covers the entire space */
-            }
-    
-            .symbol-img {
-                height: 35px;
-                /* Adjust the height as needed */
-                object-fit: fill;
-                /* Ensure the image covers the entire space */
-            }
-        </style>  
-    </head>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Home</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <style>
+        .sets-img-custom {
+            max-height: 5rem;
+            max-width: 100%;
+        }
+
+        .symbol-img {
+            max-height: 25px;
+            object-fit: fill;
+        }
+    </style>
+</head>
+
 <body>
     <!-- Include header if needed -->
     <%- include('../partials/header.ejs') %>
 
-    <header class="mt-3">
-        <div class="container">
-            <p class="fs-2"><%= series.name %> Series</p>
-        </div>
-    </header>
+        <main class="mt-3">
+            <div class="container">
 
-    <!-- Render cards for each set -->
-    <div class="container">
-        <div class="row row-cols-4">
-            <% sets.forEach((set) => { %>
-                <div class="col mb-4">
-                    <div class="card h-100">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <div class="d-flex pr-3 align-items-center">
-                                <% if (set.symbol) { %>
-                                    <img src="<%= set.symbol %>" alt="Symbol" class="symbol-img mr-2">
-                                    <% } %>
-                                        <h5 class="card-title mb-0 pr-3">
-                                            <%= set.name %>
-                                        </h5>
+                <h4 class=mt-3>
+                    <%= series.name %> Series
+                </h4>
+
+                <div class="row row-cols-sm-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 row-cols-xxl-5 g-3">
+                    <% setsList.forEach((set)=> { %>
+                        <div class="col">
+                            <div class="card p-3" style="height: 273px">
+                                <div class="d-flex align-items-center mb-2">
+                                    <% if (set.symbol) { %>
+                                        <img src="<%= set.symbol %>" alt="Symbol" class="symbol-img me-2">
+                                        <% } %>
+                                            <div class="fs-6 fw-medium">
+                                                <%= set.name %>
+                                            </div>
+                                </div>
+                                <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 80px">
+                                    <img src="<%= set.logo %>" class="sets-img-custom" alt="<%= set.name %> Logo">
+                                </div>
+                                <div class="d-flex flex-column">
+                                    <p class="card-text mt-3">
+                                        <span> Released:
+                                            <%= set.releaseDate %>
+                                        </span><br>
+                                        <span>Total Cards: <%= set.cardCountTotal %></span>
+                                    </p>
+                                    <a href="/sets/<%= set.id %>" class="btn btn-outline-secondary mt-auto">View
+                                        Set</a>
+                                </div>
                             </div>
                         </div>
-                        <div class="card-img-wrapper p-3">
-                            <img src="<%= set.logo %>" class="card-img card-img-max-height"
-                                alt="<%= set.name %> Logo">
-                        </div>
-                        <div class="card-body d-flex flex-column justify-content-between">
-                            <p class="card-text">
-                                <span>Total Cards: <%= set.cardCountTotal %></span><br>
-                                <span>Release Date: <%= set.releaseDate %></span>
-                            </p>
-                            <!-- Inside the card body in sets.ejs -->
-                            <a href="/sets/<%= set.id %>" class="btn btn-primary mt-auto">View Set</a>
-                        </div>
-                    </div>
+                        <% }); %>
                 </div>
-            <% }); %>
-        </div>
-    </div>
 
-    <!-- Include footer if needed -->
-    <%- include('../partials/footer.ejs') %>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+        </main>
+
+        <!-- Include footer if needed -->
+        <%- include('../partials/footer.ejs') %>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+                integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+                crossorigin="anonymous"></script>
 </body>
+
 </html>

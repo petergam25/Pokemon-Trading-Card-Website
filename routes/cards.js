@@ -8,9 +8,9 @@ router.get('/', (req, res) => {
   const limit = parseInt(req.query.limit) || 25; // Default to 20 if no query param provided
   const offset = (page - 1) * limit; // Calculate the offset based on the page and limit
 
-  console.log('Page: ',page);
-  console.log('Limit: ',limit);
-  console.log('Offset: ',offset);
+  console.log('Page: ', page);
+  console.log('Limit: ', limit);
+  console.log('Offset: ', offset);
 
   const query = req.query.query || ''; // Default query to blank
   const sort = req.query.sort || 'name ASC'; // Default sort to Series_ID
@@ -40,7 +40,9 @@ router.get('/', (req, res) => {
       }
 
       // Render your page with the paginated data and total pages
-      res.render('cards/cards', {
+      res.render('cards/cards', { 
+        user: req.session.user, 
+        displayName: req.session.displayName, 
         cardsList: result,
         limit,
         currentQuery: query,

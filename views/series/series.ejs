@@ -4,22 +4,14 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Sets</title>
+    <title>Series</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 
-    <!-- Add the following style section for card images -->
     <style>
-        .card-img {
-            max-height: 3.125rem;
-            width: auto;
-        }
-
-        .symbol-img {
-            height: 35px;
-            /* Adjust the height as needed */
-            object-fit: fill;
-            /* Ensure the image covers the entire space */
+        .series-img-custom {
+            max-height: 5rem;
+            max-width: 100%;
         }
     </style>
 </head>
@@ -28,50 +20,113 @@
 
     <%- include('../partials/header.ejs') %>
 
-        <header class="mt-3">
+        <main class="mt-3">
             <div class="container">
-                <p class="fs-2">Series</p>
-            </div>
-        </header>
 
-        <main class="my-3">
-            <div class="container">
-                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+                <div class="row align-items-center">
+
+                    <!-- Search Bar -->
+                    <div class="col-auto position-relative">
+                        <form action="/series" method="GET" class="d-flex">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                        class="bi bi-search" viewBox="0 0 16 16">
+                                        <path
+                                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
+                                    </svg>
+                                </span>
+                                <input class="form-control" type="text" id="search" name="query"
+                                    placeholder="Search series..." value="<%= currentQuery %>">
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Collection Checks -->
+                    <div class="col-auto">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+                            <label class="form-check-label" for="flexRadioDefault1">
+                                All
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2"
+                                checked>
+                            <label class="form-check-label" for="flexRadioDefault2">
+                                In collection
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="my-3 fw-medium" id="seriesCount">
+
+                </div>
+
+                <hr>
+
+                <div class="row row-cols-1 row-cols-sm-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 row-cols-xxl-4 g-3">
                     <% serieslist.forEach((series)=> { %>
-                        <div class="col mb-4">
-                            <div class="card h-100">
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <div class="d-flex pr-3 align-items-center">
-                                        <h5 class="card-title mb-0 pr-3">
-                                            <%= series.name %>
-                                        </h5>
+                        <div class="col">
+                            <div class="card p-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="fs-6 fw-medium">
+                                            <%= series.name %> Series
                                     </div>
                                 </div>
-                                <div class="card-img-wrapper p-3">
-                                    <% if (series.logo) { %>
-                                        <img src="<%= series.logo %>" class="card-img card-img-max-height"
+                                <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 80px">
+                                        <img src="<%= series.logo %>" class="series-img-custom"
                                             alt="<%= series.name %> Logo">
-                                        <% } %>
                                 </div>
-                                <div class="card-body d-flex flex-column justify-content-between">
-                                    <p class="card-text">
-
-                                    </p>
+                                <div class="d-flex flex-column">
                                     <!-- Inside the card body in sets.ejs -->
-                                    <a href="/series/<%= series.id %>" class="btn btn-primary mt-auto">View Series</a>
+                                    <a href="/series/<%= series.id %>" class="btn btn-outline-secondary mt-auto">View Series</a>
                                 </div>
                             </div>
                         </div>
                         <% }); %>
                 </div>
+
             </div>
+
         </main>
 
 
         <%- include('../partials/footer.ejs') %>
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-                integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-                crossorigin="anonymous"></script>
+            
+        <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <!-- Bootstrap Bundle with Popper.js -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+            crossorigin="anonymous"></script>
+
+            <script>
+                $(document).ready(function () {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const initialQuery = urlParams.get('query'); // Get initial query value
+
+                    $('#search').val(initialQuery); // Set initial query value in the search box
+
+                    // Function to update the series count based on displayed sets
+                    function updateSeriesCount() {
+                        const seriesCount = $('.row .col').length; // Get the number of sets displayed
+                        $('#seriesCount').text(`${seriesCount} Series`); // Update the header text
+                    }
+
+                    // Call the function initially and whenever sets are updated
+                    updateSeriesCount();
+
+                    $('#sortBy, #sortOrder').change(updateSeriesCount);
+                });
+
+
+            </script>
+
+            
 </body>
 
 </html>
