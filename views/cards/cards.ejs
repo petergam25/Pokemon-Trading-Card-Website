@@ -69,106 +69,104 @@
                     </div>
                 </div>
 
-                <h4 class="mt-4" id="cardsCount"></h4>
+                <div class="my-3 fw-medium">
+                    <% const startCard=((currentPage - 1) * limit) + 1; %>
+                        <% const endCard=Math.min(currentPage * limit, totalRecords); %>
 
-                <% const startCard=((currentPage - 1) * limit) + 1; %>
-                    <% const endCard=Math.min(currentPage * limit, totalRecords); %>
-
-                        <%= startCard %> - <%= endCard %> of <%= totalRecords %> cards
+                            <%= startCard %> - <%= endCard %> of <%= totalRecords %> cards
+                </div>
 
 
-                                    <hr>
 
-                                    <!-- Filters -->
-                                    <div class="row align-items-center my-3">
-                                        <!-- Sort By -->
-                                        <div class="col-md-auto d-flex align-items-center">
-                                            <label for="sortBy" class="me-2">Sort by:</label>
-                                            <div class="flex-grow-1">
-                                                <select class="form-select" id="sortBy"
-                                                    aria-label="Default select example">
-                                                    <option value="name ASC" selected>Card name (A-Z)</option>
-                                                    <option value="name DESC">Card name (Z-A)</option>
-                                                    <option value="rarity ASC">Rarity (asc)</option>
-                                                    <option value="rarity DESC">Rarity (desc)</option>
-                                                </select>
-                                            </div>
-                                        </div>
+                <hr>
 
-                                        <!-- Page Limit Dropdown -->
-                                        <div class="col-md-auto d-flex align-items-center">
-                                            <label for="pageLimitSelect" class="me-2">Page Limit:</label>
-                                            <div class="flex-grow-1">
-                                                <select class="form-select" id="pageLimitSelect"
-                                                    aria-label="Page Limit Select">
-                                                    <option value="25">25</option>
-                                                    <option value="50">50</option>
-                                                    <option value="100">100</option>
-                                                </select>
-                                            </div>
-                                        </div>
+                <!-- Filters -->
+                <div class="row align-items-center my-3">
+                    <!-- Sort By -->
+                    <div class="col-md-auto d-flex align-items-center">
+                        <label for="sortBy" class="me-2">Sort by:</label>
+                        <div class="flex-grow-1">
+                            <select class="form-select" id="sortBy" aria-label="Default select example">
+                                <option value="name ASC" selected>Card name (A-Z)</option>
+                                <option value="name DESC">Card name (Z-A)</option>
+                                <option value="rarity ASC">Rarity (asc)</option>
+                                <option value="rarity DESC">Rarity (desc)</option>
+                            </select>
+                        </div>
+                    </div>
 
-                                    </div>
+                    <!-- Page Limit Dropdown -->
+                    <div class="col-md-auto d-flex align-items-center">
+                        <label for="pageLimitSelect" class="me-2">Page Limit:</label>
+                        <div class="flex-grow-1">
+                            <select class="form-select" id="pageLimitSelect" aria-label="Page Limit Select">
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                    </div>
 
-                                    <div
-                                        class="row row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 g-2">
-                                        <% cardsList.slice(0, limit).forEach((card)=> { %>
-                                            <a href="/cards/<%= card.id %>">
-                                                <% if (card.image) { %>
-                                                    <img src="<%= card.image %>" class="card-img-custom-2"
-                                                        alt="<%= card.image %> Logo">
-                                                    <% } %>
-                                            </a>
-                                            <% }); %>
-                                    </div>
+                </div>
 
-                                    <% if (totalPages <= 10) { %>
-                                        <nav aria-label="Page navigation example" class="my-3">
-                                            <ul class="pagination justify-content-center">
-                                                <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
-                                                    <a href="#" class="page-link pagination-link" data-page="<%= currentPage - 1 %>">Previous</a>
-                                                </li>
-                                                <% for (let i = 1; i <= totalPages; i++) { %>
-                                                    <li class="page-item <%= currentPage === i ? 'active' : '' %>">
-                                                        <a href="#" class="page-link pagination-link" data-page="<%= i %>"><%= i %></a>
-                                                    </li>
-                                                <% } %>
-                                                <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
-                                                    <a href="#" class="page-link pagination-link" data-page="<%= currentPage + 1 %>">Next</a>
-                                                </li>
-                                            </ul>
-                                        </nav>
-                                    <% } else { %>
-                                        <nav aria-label="Page navigation example" class="my-3">
-                                            <ul class="pagination justify-content-center">
-                                                <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
-                                                    <a href="#" class="page-link pagination-link" data-page="<%= currentPage - 1 %>">Previous</a>
-                                                </li>
-                                                <li class="page-item <%= currentPage === 1 ? 'active' : '' %>">
-                                                    <a href="#" class="page-link pagination-link" data-page="1">1</a>
-                                                </li>
-                                                <% if (currentPage > 4) { %>
-                                                    <li class="page-item">
-                                                        <a href="#" class="page-link pagination-link disabled">...</a>
-                                                    </li>
-                                                <% } %>
-                                                <% for (let i = Math.max(2, currentPage - 3); i <= Math.min(currentPage + 3, totalPages); i++) { %>
-                                                    <li class="page-item <%= currentPage === i ? 'active' : '' %>">
-                                                        <a href="#" class="page-link pagination-link" data-page="<%= i %>"><%= i %></a>
-                                                    </li>
-                                                <% } %>
+                <div class="row row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 g-2">
+                    <% cardsList.slice(0, limit).forEach((card)=> { %>
+                        <a href="/cards/<%= card.id %>">
+                            <% if (card.image) { %>
+                                <img src="<%= card.image %>" class="card-img-custom-2" alt="<%= card.image %> Logo">
+                                <% } %>
+                        </a>
+                        <% }); %>
+                </div>
+
+                <% if (totalPages <=10) { %>
+                    <!-- Simple pagination for <= 10 pages -->
+                    <% } else { %>
+                        <!-- Complex pagination for > 10 pages -->
+                        <nav aria-label="Page navigation example" class="my-3">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                                    <a href="#" class="page-link pagination-link"
+                                        data-page="<%= currentPage - 1 %>">Previous</a>
+                                </li>
+                                <li class="page-item <%= currentPage === 1 ? 'active' : '' %>">
+                                    <a href="#" class="page-link pagination-link" data-page="1">1</a>
+                                </li>
+                                <% if (currentPage> 4) { %>
+                                    <li class="page-item">
+                                        <a href="#" class="page-link pagination-link disabled">...</a>
+                                    </li>
+                                    <% } %>
+                                        <% for (let i=Math.max(2, currentPage - 3); i <=Math.min(currentPage + 3,
+                                            totalPages); i++) { %>
+                                            <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                                                <a href="#" class="page-link pagination-link" data-page="<%= i %>">
+                                                    <%= i %>
+                                                </a>
+                                            </li>
+                                            <% } %>
                                                 <% if (currentPage < totalPages - 3) { %>
                                                     <li class="page-item">
                                                         <a href="#" class="page-link pagination-link disabled">...</a>
                                                     </li>
-                                                <% } %>
-                                                <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
-                                                    <a href="#" class="page-link pagination-link" data-page="<%= currentPage + 1 %>">Next</a>
-                                                </li>
-                                            </ul>
-                                        </nav>
-                                    <% } %>
-                                    
+                                                    <li
+                                                        class="page-item <%= currentPage === totalPages ? 'active' : '' %>">
+                                                        <a href="#" class="page-link pagination-link"
+                                                            data-page="<%= totalPages %>">
+                                                            <%= totalPages %>
+                                                        </a>
+                                                    </li>
+                                                    <% } %>
+                                                        <li
+                                                            class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                                                            <a href="#" class="page-link pagination-link"
+                                                                data-page="<%= currentPage + 1 %>">Next</a>
+                                                        </li>
+                            </ul>
+                        </nav>
+                        <% } %>
+
+
 
 
 
