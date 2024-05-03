@@ -17,7 +17,7 @@ router.get('/', (req, res) => {
         ORDER BY ${sort}
         ${order}
     `;
-        
+
     let seriesSQL = `
         SELECT DISTINCT series.* 
         FROM series 
@@ -42,26 +42,59 @@ router.get('/', (req, res) => {
 
 // SET DETAILS PAGE
 router.get('/:setId', (req, res) => {
+
+    const query = req.query.query || ''; // Default query to blank
+    const sort = req.query.sort || 'name ASC'; // Default sort to Series_ID
     const setId = req.params.setId; // Get the set ID from URL params
 
     // Query the database to fetch details of the specified set
-    const setSQL = `SELECT * FROM sets WHERE id = ?`;
-    const cardsInSetSQL = 'SELECT * FROM cards WHERE set_ID = ?'
+    const setSQL = `
+        SELECT * 
+        FROM sets 
+        WHERE id = ?
+    
+    `;
+    const cardsInSetSQL = `
+        SELECT * 
+        FROM cards 
+        WHERE set_ID = ?
+        AND name LIKE ?
+        ORDER BY ${sort}
+    `;
+
+    console.log(setSQL);
+    console.log(cardsInSetSQL);
 
     connection.query(setSQL, [setId], (err, result) => {
-        if (err) throw err;
+        if (err) {
+            console.error('Error querying set: ', err)
+            res.status(500).send('Internal server error.');
+            return;
+        }
+        console.log(result);
         if (result.length === 0) {
             // Handle case where set is not found
             res.status(404).send('Set not found.');
         } else {
             // Query the database to fetch all cards belonging to the set
-            connection.query(cardsInSetSQL, [setId], (err, cardsResult) => {
-                if (err) throw err;
+            connection.query(cardsInSetSQL, [setId, `%${query}%`], (err, cardsResult) => {
+                if (err) {
+                    console.error('Error querying set: ', err)
+                    res.status(500).send('Internal server error.');
+                    return;
+                }
+
+                console.log(cardsResult);
+                console.log('Got here');
 
                 // Render the set details page with the set data and card data
                 res.render('sets/setsdetails', {
+                    user: req.session.user,
+                    displayName: req.session.displayName,
                     set: result[0],
-                    cardsInSet: cardsResult
+                    cardsList: cardsResult,
+                    currentQuery: query,
+                    currentSort: sort,
                 });
             });
         }
