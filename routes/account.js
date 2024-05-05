@@ -61,18 +61,46 @@ router.post('/register', [
                 // Hash the password using bcrypt
                 const hashedPassword = await bcrypt.hash(password, 10); // 10 is the saltRounds value
 
-                // Insert new user with hashed password
+                // Insert new user
                 const insertUserQuery = 'INSERT INTO users (displayName, email, password) VALUES (?, ?, ?)';
-                connection.query(insertUserQuery, [displayName, email, hashedPassword], (err, result) => {
+                connection.query(insertUserQuery, [displayName, email, hashedPassword], async (err, result) => {
                     if (err) {
-                        const errorMessage = 'Registration failed during database insertion. Please try again.';
-                        return res.render('account/register', { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
+                        // Handle database insertion error
                     }
 
-                    // Successful registration
-                    console.log('New user registered: ', [displayName, email, hashedPassword]);
-                    const errorMessage = '';
-                    return res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage });
+                    // Get the ID of the newly inserted user
+                    const userId = result.insertId;
+
+                    // Create a new collection for the user
+                    const insertCollectionQuery = 'INSERT INTO collection (user_id) VALUES (?)';
+                    connection.query(insertCollectionQuery, [userId], async (err, collectionResult) => {
+                        if (err) {
+                            // Handle collection insertion error
+                        }
+
+                        // Get the ID of the newly created collection
+                        const collectionId = collectionResult.insertId;
+
+                        // Create a new wishlist for the user
+                        const insertWishlistQuery = 'INSERT INTO wishlist (user_id) VALUES (?)';
+                        connection.query(insertWishlistQuery, [userId], async (err, wishlistResult) => {
+                            if (err) {
+                                // Handle wishlist insertion error
+                            }
+
+                            // Update the user's collection_id and wishlist_id in the users table
+                            const updateUserQuery = 'UPDATE users SET collection_id = ?, wishlist_id = ? WHERE id = ?';
+                            connection.query(updateUserQuery, [collectionId, wishlistResult.insertId, userId], (err, updateUserResult) => {
+                                if (err) {
+                                    // Handle update error
+                                }
+
+                                // Registration successful
+                                console.log('New user registered: ', [displayName, email, hashedPassword]);
+                                return res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage: '' });
+                            });
+                        });
+                    });
                 });
             } catch (error) {
                 console.error('Error hashing password:', error);
