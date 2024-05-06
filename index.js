@@ -3,6 +3,7 @@ const express = require('express');
 const sessions = require('express-session');
 const path = require('path');
 const cookieParser = require('cookie-parser');
+const flash = require('connect-flash');
 const oneHour = 1000 * 60 * 60 * 1;
 
 // Create Express app
@@ -14,7 +15,9 @@ app.set('view engine', 'ejs'); // Set EJS as the view engine
 app.set('views', path.join(__dirname, 'views')); // Set views directory
 app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from the public directory
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(cookieParser());
+app.use(flash());
 app.use(sessions({
     secret: "myshows14385899",
     saveUninitialized: true,
@@ -34,11 +37,18 @@ app.use('/sets', setsRoutes);
 app.use('/series', seriesRoutes);
 app.use('/account', accountRoutes);
 
+// Flash message
+app.get('/flash', function(req, res){
+    // Set a flash message by passing the key, followed by the value, to req.flash().
+    req.flash('info', 'Flash is back!')
+    res.redirect('/');
+  });
+
 // HOME PAGE
 app.get('/', (req, res) => {
 
     if (req.session.user) {
-        res.redirect('dashboard');
+        res.redirect('dashboard', { messages: req.flash('info') });
     } else {
         const user = req.session.user;
         const displayName = req.session.displayName;

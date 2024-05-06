@@ -40,9 +40,9 @@ router.get('/', (req, res) => {
       }
 
       // Render your page with the paginated data and total pages
-      res.render('cards/cards', { 
-        user: req.session.user, 
-        displayName: req.session.displayName, 
+      res.render('cards/cards', {
+        user: req.session.user,
+        displayName: req.session.displayName,
         cardsList: result,
         limit,
         currentQuery: query,
@@ -81,5 +81,53 @@ router.get('/:cardsId', (req, res) => {
     });
   });
 });
+
+router.post("/add-to-collection", async (req, res) => {
+  const { cardId } = req.body; // Extract cardId from request body
+  const userId = req.session.user;
+
+  console.log('Card ID: ', cardId);
+  console.log('User ID: ', userId);
+
+  // Check if user is logged in
+  if (!userId) {
+    console.log("User not logged in?");
+    return res.status(401).json({ error: 'User not logged in' });
+  }
+
+  try {
+    // Fetch the user's collection ID from the database
+    const userCollectionIdQuery = `SELECT collection_id FROM users WHERE user_ID = "${userId}" `;
+    connection.query(userCollectionIdQuery, (err, userCollectionIdResult) => {
+      if (err) {
+        console.error('Error fetching user collection ID:', err);
+        return res.status(500).json({ error: 'Error fetching user collection ID' });
+      }
+
+      // Check if the user's collection ID exists
+      if (userCollectionIdResult.length === 0) {
+        console.log("User collection ID not found");
+        return res.status(404).json({ error: 'User collection ID not found' });
+      }
+
+      const userCollectionId = userCollectionIdResult[0].collection_id;
+
+      // Now that we have the user's collection ID, perform the insert into collections_cards
+      const insertQuery = 'INSERT INTO collections_cards (collection_ID, card_ID) VALUES (?, ?)';
+      console.log('Card ID again: ',cardId)
+      connection.query(insertQuery, [userCollectionId, cardId], (insertErr, result) => {
+        if (insertErr) {
+          console.error('Error adding card to collection:', insertErr);
+          return res.status(500).json({ error: 'Error adding card to collection' });
+        }
+        return res.status(200).json({ success: true });
+      });
+    });
+  } catch (error) {
+    console.error('Error adding card to collection:', error);
+    return res.status(500).json({ error: 'Error adding card to collection' });
+  }
+});
+
 
 module.exports = router;

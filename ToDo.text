@@ -9,7 +9,6 @@ Account:
 
 Database:
     Normalisation of existing tables
-    Add table for collections and wishlist
 
 Dashboard:
     Add dashboard UI and functionality
@@ -26,6 +25,7 @@ Wishlist:
 Navbar:
     Restructure links (browse, home, dashboard, my collection, 
     browse collections)
+    Fix navbar expansion
     
 
 Cards / Sets / Series:
@@ -36,7 +36,3 @@ Cards / Sets / Series:
 
 Trading system:
     ???
-
-API:
-    Create API
-    Have database queries go through API instead
