@@ -3,6 +3,8 @@ General:
     Code modularity
     Add graphics and info for home page
     Make a footer
+    .env file
+    Global css file
 
 Account:
     Finish account settings page with deleting data
@@ -12,6 +14,10 @@ Database:
 
 Dashboard:
     Add dashboard UI and functionality
+    Cards in collection per type
+    Cards in collection per rarity
+    Cards in wishlist
+    Liked collections
 
 Collection:
     Allow user to add card to their own Collection
@@ -26,8 +32,10 @@ Navbar:
     Restructure links (browse, home, dashboard, my collection, 
     browse collections)
     Fix navbar expansion
-    
 
+Notifications?
+    ???
+    
 Cards / Sets / Series:
     Compare cards
     Filters for cards

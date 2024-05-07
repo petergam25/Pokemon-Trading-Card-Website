@@ -58,51 +58,49 @@ router.post('/register', [
             }
 
             try {
-                // Create a new collection for the user
-                const insertCollectionQuery = 'INSERT INTO collection (id) VALUES (NULL)';
-                connection.query(insertCollectionQuery, async (err, collectionResult) => {
+
+                // Hash the password using bcrypt
+                const hashedPassword = await bcrypt.hash(password, 10); // 10 is the saltRounds value
+
+                // Insert new user
+                const insertUserQuery = 'INSERT INTO users (displayName, email, password) VALUES (?, ?, ?)';
+                connection.query(insertUserQuery, [displayName, email, hashedPassword], async (err, userResult) => {
                     if (err) {
-                        // Handle collection insertion error
-                        console.error('Error inserting collection:', err);
+                        // Handle user insertion error
+                        console.error('Error inserting user:', err);
                         // Render an error page or return an error response
-                        return res.status(500).send('Error inserting collection');
+                        return res.status(500).send('Error inserting user');
                     }
 
-                    // Get the ID of the newly created collection
-                    const collectionId = collectionResult.insertId;
+                    const userId = userResult.insertId;
 
-                    // Create a new wishlist for the user
-                    const insertWishlistQuery = 'INSERT INTO wishlist (id) VALUES (NULL)';
-                    connection.query(insertWishlistQuery, async (err, wishlistResult) => {
+                    // Create a new collection for the user
+                    const insertCollectionQuery = 'INSERT INTO collection (name, collection_type_ID, user_id) VALUES (?, 1, ?)';
+                    connection.query(insertCollectionQuery, ['User Collection', userId], async (err, collectionResult) => {
                         if (err) {
-                            // Handle wishlist insertion error
-                            console.error('Error inserting wishlist:', err);
+                            // Handle collection insertion error
+                            console.error('Error inserting collection:', err);
                             // Render an error page or return an error response
-                            return res.status(500).send('Error inserting wishlist');
+                            return res.status(500).send('Error inserting collection');
                         }
 
-                        // Get the ID of the newly created wishlist
-                        const wishlistId = wishlistResult.insertId;
-
-                        // Hash the password using bcrypt
-                        const hashedPassword = await bcrypt.hash(password, 10); // 10 is the saltRounds value
-
-                        // Insert new user with collection_id and wishlist_id
-                        const insertUserQuery = 'INSERT INTO users (displayName, email, password, collection_id, wishlist_id) VALUES (?, ?, ?, ?, ?)';
-                        connection.query(insertUserQuery, [displayName, email, hashedPassword, collectionId, wishlistId], async (err, userResult) => {
+                        // Create a new wishlist for the user
+                        const insertWishlistQuery = 'INSERT INTO collection (name, collection_type_ID, user_id) VALUES (? , 2, ?)';
+                        connection.query(insertWishlistQuery, ['User Wishlist', userId], async (err, wishlistResult) => {
                             if (err) {
-                                // Handle user insertion error
-                                console.error('Error inserting user:', err);
+                                // Handle wishlist insertion error
+                                console.error('Error inserting wishlist:', err);
                                 // Render an error page or return an error response
-                                return res.status(500).send('Error inserting user');
+                                return res.status(500).send('Error inserting wishlist');
                             }
-
-                            // Registration successful
-                            console.log('New user registered:', [userResult]);
-                            return res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage: '' });
                         });
                     });
+
+                    // Registration successful
+                    console.log('Registration Successful');
+                    return res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage: '' });
                 });
+
             } catch (error) {
                 console.error('Error hashing password:', error);
                 const errorMessage = 'Registration failed during password hashing. Please try again.';

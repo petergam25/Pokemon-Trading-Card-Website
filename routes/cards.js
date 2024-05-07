@@ -7,6 +7,7 @@ router.get('/', (req, res) => {
   const page = parseInt(req.query.page) || 1; // Default to page 1 if no query param provided
   const limit = parseInt(req.query.limit) || 25; // Default to 20 if no query param provided
   const offset = (page - 1) * limit; // Calculate the offset based on the page and limit
+  const userId = req.session.user;
 
   console.log('Page: ', page);
   console.log('Limit: ', limit);
@@ -30,26 +31,45 @@ router.get('/', (req, res) => {
     console.log('Total Records:', totalRecords);
     console.log('Total Pages:', totalPages);
 
-    // Query to fetch paginated data with limit and offset
-    let cardsSQL = `SELECT * FROM cards WHERE name LIKE ? ORDER BY ${sort} LIMIT ? OFFSET ?`;
-    console.log(cardsSQL);
-    connection.query(cardsSQL, [`%${query}%`, limit, offset], (err, result) => {
+    let UserCollectionIdSQL = `SELECT id FROM collection WHERE user_id = ? AND collection_type_ID = 1`;
+    connection.query(UserCollectionIdSQL, [userId], (err, UserCollectionId) => {
       if (err) {
         console.error(err);
         return res.status(500).send('Internal Server Error');
       }
 
-      // Render your page with the paginated data and total pages
-      res.render('cards/cards', {
-        user: req.session.user,
-        displayName: req.session.displayName,
-        cardsList: result,
-        limit,
-        currentQuery: query,
-        currentSort: sort,
-        currentPage: page,
-        totalPages,
-        totalRecords,
+      let UserCollectionCardsSQL = `SELECT * FROM collections_cards WHERE collection_ID = ?`
+      connection.query(UserCollectionCardsSQL, [UserCollectionId], (err, UserCollectionCards) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).send('Internal Server Error');
+        }
+
+        console.log(UserCollectionCards)
+
+        // Query to fetch paginated data with limit and offset
+        let cardsSQL = `SELECT * FROM cards WHERE name LIKE ? ORDER BY ${sort} LIMIT ? OFFSET ?`;
+        console.log(cardsSQL);
+        connection.query(cardsSQL, [`%${query}%`, limit, offset], (err, result) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).send('Internal Server Error');
+          }
+
+          // Render your page with the paginated data and total pages
+          res.render('cards/cards', {
+            user: req.session.user,
+            displayName: req.session.displayName,
+            cardsList: result,
+            limit,
+            currentQuery: query,
+            currentSort: sort,
+            currentPage: page,
+            totalPages,
+            totalRecords,
+            wishlist: UserCollectionCards,
+          });
+        });
       });
     });
   });
@@ -82,6 +102,7 @@ router.get('/:cardsId', (req, res) => {
   });
 });
 
+// Add to Collection
 router.post("/add-to-collection", async (req, res) => {
   const { cardId } = req.body; // Extract cardId from request body
   const userId = req.session.user;
@@ -97,8 +118,8 @@ router.post("/add-to-collection", async (req, res) => {
 
   try {
     // Fetch the user's collection ID from the database
-    const userCollectionIdQuery = `SELECT collection_id FROM users WHERE user_ID = "${userId}" `;
-    connection.query(userCollectionIdQuery, (err, userCollectionIdResult) => {
+    const userCollectionIdQuery = `SELECT id FROM collection WHERE user_id = ? AND collection_type_ID = 1`;
+    connection.query(userCollectionIdQuery, [userId], (err, userCollectionIdResult) => {
       if (err) {
         console.error('Error fetching user collection ID:', err);
         return res.status(500).json({ error: 'Error fetching user collection ID' });
@@ -110,16 +131,17 @@ router.post("/add-to-collection", async (req, res) => {
         return res.status(404).json({ error: 'User collection ID not found' });
       }
 
-      const userCollectionId = userCollectionIdResult[0].collection_id;
+      const userCollectionId = userCollectionIdResult[0].id;
 
       // Now that we have the user's collection ID, perform the insert into collections_cards
       const insertQuery = 'INSERT INTO collections_cards (collection_ID, card_ID) VALUES (?, ?)';
-      console.log('Card ID again: ',cardId)
+      console.log('Card ID again: ', cardId)
       connection.query(insertQuery, [userCollectionId, cardId], (insertErr, result) => {
         if (insertErr) {
           console.error('Error adding card to collection:', insertErr);
           return res.status(500).json({ error: 'Error adding card to collection' });
         }
+        console.log('Card added ');
         return res.status(200).json({ success: true });
       });
     });
@@ -128,6 +150,5 @@ router.post("/add-to-collection", async (req, res) => {
     return res.status(500).json({ error: 'Error adding card to collection' });
   }
 });
-
 
 module.exports = router;
