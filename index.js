@@ -30,25 +30,20 @@ const cardsRoutes = require('./routes/cards');
 const setsRoutes = require('./routes/sets');
 const seriesRoutes = require('./routes/series');
 const accountRoutes = require('./routes/account');
+const collectionRoutes = require('./routes/collection')
 
 // Mount routes
 app.use('/cards', cardsRoutes);
 app.use('/sets', setsRoutes);
 app.use('/series', seriesRoutes);
 app.use('/account', accountRoutes);
-
-// Flash message
-app.get('/flash', function(req, res){
-    // Set a flash message by passing the key, followed by the value, to req.flash().
-    req.flash('info', 'Flash is back!')
-    res.redirect('/');
-  });
+app.use('/collection', collectionRoutes);
 
 // HOME PAGE
 app.get('/', (req, res) => {
 
     if (req.session.user) {
-        res.redirect('dashboard', { messages: req.flash('info') });
+        res.redirect('dashboard');
     } else {
         const user = req.session.user;
         const displayName = req.session.displayName;
