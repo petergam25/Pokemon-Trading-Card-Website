@@ -116,7 +116,7 @@ router.post('/delete-collection', (req, res) => {
 
 // ADD RATING
 router.post('/add-collection-rating', [], (req, res) => {
-    
+
     const { collectionID, collectionRating } = req.body;
     const userId = req.session.user;
 
@@ -132,8 +132,8 @@ router.post('/add-collection-rating', [], (req, res) => {
         return renderMyCollectionsWithError(req, res, errorMessage);
     }
 
-    addRatingSQL = `INSERT INTO rating (value, user_id, collection_id) VALUES (?, ?, ?)`
-    connection.query(addRatingSQL, [collectionRating, userId, collectionID], (err,result) => {
+    addRatingSQL = `INSERT INTO rating (value, user_id, collection_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)`;
+    connection.query(addRatingSQL, [collectionRating, userId, collectionID], (err, result) => {
         if (err) {
             console.error(err);
             return res.status(500).send('Internal Server Error');
@@ -181,6 +181,7 @@ router.get('/:collectionID', (req, res) => {
     const sort = req.query.sort || 'name ASC';      // Default sort to Series_ID
 
     let userCollection = [];
+    let userCollectionRating = null;
 
     // Get specific collection
     const collectionSQL = `
@@ -197,7 +198,7 @@ router.get('/:collectionID', (req, res) => {
             return res.status(500).send('Internal Server Error');
         }
 
-        // Query to fetch all cards from specific collection
+        // Get all cards from specific collection
         let allCardsSQL = `SELECT * FROM cards WHERE id IN (SELECT card_ID FROM collections_cards WHERE collection_ID = ? )`;
         connection.query(allCardsSQL, [collectionID], (err, allCards) => {
             if (err) {
@@ -208,7 +209,7 @@ router.get('/:collectionID', (req, res) => {
             const totalRecords = allCards.length;
             const totalPages = Math.ceil(totalRecords / limit);
 
-            // Query to fetch paginated cards with limit and offset
+            // Get paginated cards with limit and offset
             let cardsSQL = `SELECT * FROM cards WHERE id IN (SELECT card_ID FROM collections_cards WHERE collection_ID = ? ) ORDER BY ${sort} LIMIT ? OFFSET ?`;
             connection.query(cardsSQL, [collectionID, limit, offset], (err, collectionCards) => {
                 if (err) {
@@ -218,41 +219,48 @@ router.get('/:collectionID', (req, res) => {
 
                 if (req.session.user) {
 
-                    // Get collection_cards from the users collection using collection id
-                    let UserCollectionCardsSQL = `
-                    SELECT * 
-                    FROM collections_cards 
-                    JOIN collection ON collections_cards.collection_ID = collection.id 
-                    JOIN users ON collection.user_id = users.user_ID
-                    WHERE users.user_ID = ?
-                    `
-                    connection.query(UserCollectionCardsSQL, [req.session.user], (err, UserCollectionCards) => {
+                    // Get users rating value for collection
+                    const userCollectionRatingSQL = `SELECT value FROM rating where collection_id = ? AND user_id = ?`;
+                    connection.query(userCollectionRatingSQL, [collectionID, req.session.user], (err, userCollectionRating) => {
                         if (err) {
                             console.error(err);
                             return res.status(500).send('Internal Server Error');
                         }
+                        // Get collection_cards from the users collection using collection id
+                        let UserCollectionCardsSQL = `
+                            SELECT * 
+                            FROM collections_cards 
+                            JOIN collection ON collections_cards.collection_ID = collection.id 
+                            JOIN users ON collection.user_id = users.user_ID 
+                            WHERE users.user_ID = ?`;
+                        connection.query(UserCollectionCardsSQL, [req.session.user], (err, UserCollectionCards) => {
+                            if (err) {
+                                console.error(err);
+                                return res.status(500).send('Internal Server Error');
+                            }
 
-                        const userCollection = UserCollectionCards.map(card => card.card_ID);
+                            const userCollection = UserCollectionCards.map(card => card.card_ID);
 
-                        console.log(collection[0]);
+                            console.log(userCollectionRating);
 
-                        // Render your page with the paginated data and total pages
-                        res.render('collections/collectiondetails', {
-                            user: req.session.user,
-                            userCollection,
-                            displayName: req.session.displayName,
-                            cardsList: collectionCards,
-                            limit,
-                            currentSort: sort,
-                            currentPage: page,
-                            totalPages,
-                            totalRecords,
-                            collection : collection[0],
-                        });
+                            // Render your page with the paginated data and total pages
+                            res.render('collections/collectiondetails', {
+                                user: req.session.user,
+                                userCollection,
+                                displayName: req.session.displayName,
+                                cardsList: collectionCards,
+                                limit,
+                                currentSort: sort,
+                                currentPage: page,
+                                totalPages,
+                                totalRecords,
+                                collection: collection[0],
+                                userCollectionRating: userCollectionRating[0],
+                            });
+                        })
                     })
-                } else {
 
-                    console.log(collection[0]);
+                } else {
 
                     // Render your page with the paginated data and total pages
                     res.render('collections/collectiondetails', {
@@ -265,7 +273,8 @@ router.get('/:collectionID', (req, res) => {
                         currentPage: page,
                         totalPages,
                         totalRecords,
-                        collection : collection[0],
+                        collection: collection[0],
+                        userCollectionRating
                     });
                 }
             });

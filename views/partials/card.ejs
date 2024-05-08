@@ -36,6 +36,20 @@
                         </button>
                         <% } %>
             </div>
+
+            <div>
+                <% if (userWishlist.includes(card.id)) { %> 
+                    <button class="btn btn-outline-danger remove-from-wishlist-btn"
+                    data-cardid="<%= card.id %>">
+                    Remove from wishlist
+                </button>
+                <% } else { %>
+                    <button class="btn btn-outline-success add-to-wishlist-btn"
+                    data-cardid="<%= card.id %>">
+                    Add to wishlist
+                </button>
+                <% } %>
+            </div>
             <% } %>
 
     </div>

@@ -22,6 +22,7 @@
                 <% if (user!=collection.user_id && user) { %>
                     <div class="d-flex row align-items-center">
 
+                        <% if (userCollectionRating == undefined) { %> 
                         <!-- Rate Button -->
                         <div class="col-auto">
                             <button class="btn btn-outline-success rate-btn" data-collectionid="<%= collection.id %>"
@@ -29,6 +30,16 @@
                                 Rate this collection
                             </button>
                         </div>
+                        <% } else { %> 
+                            Your rating: <%= parseFloat(userCollectionRating.value).toFixed(2) %> out of 5
+                            <div class="col-auto">
+                                <button class="btn btn-outline-success rate-btn" data-collectionid="<%= collection.id %>"
+                                    id="rateCollectionBtn">
+                                    Change rating
+                                </button>
+                            </div>
+                            <% } %>
+                        
                         <!-- Comments -->
                         <div class="col-auto">
                             <button class="btn btn-outline-secondary ">

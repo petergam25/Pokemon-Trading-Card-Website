@@ -23,7 +23,6 @@ router.get('/', (req, res) => {
     const totalRecords = countResult[0].totalCount;
     const totalPages = Math.ceil(totalRecords / limit);
 
-
     if (req.session.user) {
       // Query for users collection
       let UserCollectionIdSQL = `SELECT id FROM collection WHERE user_id = ?`;
