@@ -181,6 +181,7 @@ router.get('/:collectionID', (req, res) => {
     const sort = req.query.sort || 'name ASC';      // Default sort to Series_ID
 
     let userCollection = [];
+    let userWishlist = [];
     let userCollectionRating = null;
 
     // Get specific collection
@@ -232,31 +233,45 @@ router.get('/:collectionID', (req, res) => {
                             FROM collections_cards 
                             JOIN collection ON collections_cards.collection_ID = collection.id 
                             JOIN users ON collection.user_id = users.user_ID 
-                            WHERE users.user_ID = ?`;
+                            WHERE users.user_ID = ?
+                        `;
                         connection.query(UserCollectionCardsSQL, [req.session.user], (err, UserCollectionCards) => {
                             if (err) {
                                 console.error(err);
                                 return res.status(500).send('Internal Server Error');
                             }
-
                             const userCollection = UserCollectionCards.map(card => card.card_ID);
 
-                            console.log(userCollectionRating);
+                            // Get card ids in users wishlist
+                            let userWishlistSQL = `
+                                SELECT wishlist_cards.card_id 
+                                FROM wishlist_cards 
+                                JOIN wishlist ON wishlist_cards.wishlist_id = wishlist.id
+                                WHERE wishlist.user_id = ?
+                            `;
+                            connection.query(userWishlistSQL, [req.session.user], (err, userWishlistCards) => {
+                                if (err) {
+                                    console.error(err);
+                                    return res.status(500).send('Internal Server Error');
+                                }
+                                const userWishlist = userWishlistCards.map(card => card.card_ID);
 
-                            // Render your page with the paginated data and total pages
-                            res.render('collections/collectiondetails', {
-                                user: req.session.user,
-                                userCollection,
-                                displayName: req.session.displayName,
-                                cardsList: collectionCards,
-                                limit,
-                                currentSort: sort,
-                                currentPage: page,
-                                totalPages,
-                                totalRecords,
-                                collection: collection[0],
-                                userCollectionRating: userCollectionRating[0],
-                            });
+                                // Render your page with the paginated data and total pages
+                                res.render('collections/collectiondetails', {
+                                    user: req.session.user,
+                                    displayName: req.session.displayName,
+                                    userCollection,
+                                    userWishlist,
+                                    cardsList: collectionCards,
+                                    limit,
+                                    currentSort: sort,
+                                    currentPage: page,
+                                    totalPages,
+                                    totalRecords,
+                                    collection: collection[0],
+                                    userCollectionRating: userCollectionRating[0],
+                                });
+                            })
                         })
                     })
 
@@ -265,8 +280,9 @@ router.get('/:collectionID', (req, res) => {
                     // Render your page with the paginated data and total pages
                     res.render('collections/collectiondetails', {
                         user: req.session.user,
-                        userCollection,
                         displayName: req.session.displayName,
+                        userCollection,
+                        userWishlist,
                         cardsList: collectionCards,
                         limit,
                         currentSort: sort,

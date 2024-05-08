@@ -238,6 +238,77 @@
                         // Handle network or other errors
                     }
                 });
+
+                // ADD TO WISHLIST BUTTON
+                $(document).on('click', '.add-to-wishlist-btn', async function () {
+                        const button = $(this); // Reference to the button clicked
+                        const cardId = button.data('cardid');
+                        console.log("Button clicked to add to wishlist card ID:", cardId);
+
+                        try {
+                            const response = await fetch("/cards/add-to-wishlist", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify({
+                                    cardId: cardId
+                                }), // Pass cardId as an object in the body
+                            });
+
+                            if (response.ok) {
+                                const data = await response.json();
+                                console.log("Card added to wishlist:", data);
+
+                                button.removeClass('btn-outline-success');
+                                button.addClass('btn-outline-danger');
+                                button.removeClass('add-to-wishlist-btn');
+                                button.addClass('remove-from-wishlist-btn');
+                            } else {
+                                console.error("Failed to add card to wishlist:", response.statusText);
+                                // Handle error response if needed
+                            }
+                        } catch (error) {
+                            console.error("Error adding card to wishlist:", error);
+                            // Handle network or other errors
+                        }
+                    });
+
+                    // REMOVE FROM WISHLIST BUTTON
+                    $(document).on('click', '.remove-from-wishlist-btn', async function () {
+                        const button = $(this); // Reference to the button clicked
+                        const cardId = button.data('cardid');
+                        console.log("Button clicked to remove from wishlist card ID:", cardId);
+
+                        try {
+                            console.log('Trying to fetch route...');
+                            const response = await fetch("/cards/remove-from-wishlist", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify({
+                                    cardId: cardId
+                                }), // Pass cardId as an object in the body
+                            });
+
+                            if (response.ok) {
+                                const data = await response.json();
+                                console.log("Card removed from wishlist:", data);
+
+                                button.addClass('btn-outline-success');
+                                button.removeClass('btn-outline-danger');
+                                button.removeClass('remove-from-wishlist-btn');
+                                button.addClass('add-to-wishlist-btn');
+                            } else {
+                                console.error("Failed remove card from wishlist:", response.statusText);
+                                // Handle error response if needed
+                            }
+                        } catch (error) {
+                            console.error("Error removing card from wishlist:", error);
+                            // Handle network or other errors
+                        }
+                    });
             });
         </script>
 </body>

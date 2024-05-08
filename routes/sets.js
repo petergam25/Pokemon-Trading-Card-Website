@@ -44,7 +44,8 @@ router.get('/:setId', (req, res) => {
     const sort = req.query.sort || 'name ASC'; // Default sort to Series_ID
     const setId = req.params.setId; // Get the set ID from URL params
 
-    let cardIDs = []; // Initialize cardIDs as an empty array
+    let userCollection = []; // Initialize userCollection as an empty array
+    let userWishlist = [];
 
     // Query the database to fetch details of the specified set
     const setSQL = `SELECT * FROM sets WHERE id = ?`;
@@ -62,22 +63,33 @@ router.get('/:setId', (req, res) => {
         } else {
 
             if (req.session.user) {
-                // Query for users collection
-                let UserCollectionIdSQL = `SELECT id FROM collection WHERE user_id = ?`;
-                connection.query(UserCollectionIdSQL, [req.session.user], (err, UserCollectionId) => {
+
+                // Get card ids in users collection
+                let combinedUserCollectionSQL = `
+                    SELECT collections_cards.card_ID
+                    FROM collections_cards
+                    JOIN collection ON collections_cards.collection_ID = collection.id
+                    WHERE collection.user_id = ?
+                `;
+                connection.query(combinedUserCollectionSQL, [req.session.user], (err, userCollectionCards) => {
                     if (err) {
                         console.error(err);
                         return res.status(500).send('Internal Server Error');
                     }
+                    const userCollection = userCollectionCards.map(card => card.card_ID);
 
-                    // Query for users cards in collection
-                    let UserCollectionCardsSQL = `SELECT * FROM collections_cards WHERE collection_ID = ?`
-                    connection.query(UserCollectionCardsSQL, [UserCollectionId[0].id], (err, UserCollectionCards) => {
+                    // Get card ids in users wishlist
+                    let userWishlistSQL = `SELECT wishlist_cards.card_id 
+                        FROM wishlist_cards 
+                        JOIN wishlist ON wishlist_cards.wishlist_id = wishlist.id
+                        WHERE wishlist.user_id = ?
+                    `;
+                    connection.query(userWishlistSQL, [req.session.user], (err, userWishlistCards) => {
                         if (err) {
                             console.error(err);
                             return res.status(500).send('Internal Server Error');
                         }
-                        const cardIDs = UserCollectionCards.map(card => card.card_ID);
+                        const userWishlist = userWishlistCards.map(card => card.card_ID);
 
                         // Query the database to fetch all cards belonging to the set
                         const cardsInSetSQL = `SELECT * FROM cards WHERE set_ID = ? AND name LIKE ? ORDER BY ${sort}`;
@@ -92,11 +104,12 @@ router.get('/:setId', (req, res) => {
                             res.render('sets/setsdetails', {
                                 user: req.session.user,
                                 displayName: req.session.displayName,
+                                userCollection,
+                                userWishlist,
                                 set: result[0],
                                 cardsList: cardsResult,
                                 currentQuery: query,
                                 currentSort: sort,
-                                userCollection: cardIDs,
                             });
                         });
                     });
@@ -116,11 +129,12 @@ router.get('/:setId', (req, res) => {
                     res.render('sets/setsdetails', {
                         user: req.session.user,
                         displayName: req.session.displayName,
+                        userCollection,
+                        userWishlist,
                         set: result[0],
                         cardsList: cardsResult,
                         currentQuery: query,
                         currentSort: sort,
-                        userCollection: cardIDs,
                     });
                 });
             }

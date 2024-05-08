@@ -10,7 +10,8 @@ router.get('/', (req, res) => {
   const query = req.query.query || '';            // Default query to blank
   const sort = req.query.sort || 'name ASC';      // Default sort to Series_ID
 
-  let cardIDs = []; // Initialize cardIDs as an empty array
+  let userCollection = []; // Initialize userCollection as an empty array
+  let userWishlist = [];
 
   // Query for total cards in database
   const countSQL = `SELECT COUNT(*) AS totalCount FROM cards WHERE name LIKE ?`;
@@ -24,23 +25,33 @@ router.get('/', (req, res) => {
     const totalPages = Math.ceil(totalRecords / limit);
 
     if (req.session.user) {
-      // Query for users collection
-      let UserCollectionIdSQL = `SELECT id FROM collection WHERE user_id = ?`;
-      connection.query(UserCollectionIdSQL, [req.session.user], (err, UserCollectionId) => {
+
+      // Get card ids in users collection
+      let combinedUserCollectionSQL = `
+        SELECT collections_cards.card_ID
+        FROM collections_cards
+        JOIN collection ON collections_cards.collection_ID = collection.id
+        WHERE collection.user_id = ?
+      `;
+      connection.query(combinedUserCollectionSQL, [req.session.user], (err, userCollectionCards) => {
         if (err) {
           console.error(err);
           return res.status(500).send('Internal Server Error');
         }
+        const userCollection = userCollectionCards.map(card => card.card_ID);
 
-        // Query for users cards in collection
-        let UserCollectionCardsSQL = `SELECT * FROM collections_cards WHERE collection_ID = ?`
-        connection.query(UserCollectionCardsSQL, [UserCollectionId[0].id], (err, UserCollectionCards) => {
+        // Get card ids in users wishlist
+        let userWishlistSQL = `SELECT wishlist_cards.card_id 
+        FROM wishlist_cards 
+        JOIN wishlist ON wishlist_cards.wishlist_id = wishlist.id
+        WHERE wishlist.user_id = ?`
+        connection.query(userWishlistSQL, [req.session.user], (err, userWishlistCards) => {
           if (err) {
             console.error(err);
             return res.status(500).send('Internal Server Error');
           }
-          const cardIDs = UserCollectionCards.map(card => card.card_ID);
-          
+          const userWishlist = userWishlistCards.map(card => card.card_ID);
+
           // Query for fetch paginated data with limit and offset
           let cardsSQL = `SELECT * FROM cards WHERE name LIKE ? ORDER BY ${sort} LIMIT ? OFFSET ?`;
           console.log(cardsSQL);
@@ -53,6 +64,8 @@ router.get('/', (req, res) => {
             res.render('cards/cards', {
               user: req.session.user,
               displayName: req.session.displayName,
+              userCollection,
+              userWishlist,
               cardsList: result,
               limit,
               currentQuery: query,
@@ -60,12 +73,10 @@ router.get('/', (req, res) => {
               currentPage: page,
               totalPages,
               totalRecords,
-              userCollection: cardIDs,
             });
           });
         });
       });
-
     } else {
       // Query for fetch paginated data with limit and offset
       let cardsSQL = `SELECT * FROM cards WHERE name LIKE ? ORDER BY ${sort} LIMIT ? OFFSET ?`;
@@ -79,6 +90,8 @@ router.get('/', (req, res) => {
         res.render('cards/cards', {
           user: req.session.user,
           displayName: req.session.displayName,
+          userCollection,
+          userWishlist,
           cardsList: cardsArray,
           limit,
           currentQuery: query,
@@ -86,7 +99,6 @@ router.get('/', (req, res) => {
           currentPage: page,
           totalPages,
           totalRecords,
-          userCollection: cardIDs,
         });
       });
     }
@@ -135,19 +147,19 @@ router.post("/add-to-collection", async (req, res) => {
   try {
     // Fetch the user's collection ID from the database
     const userCollectionIdQuery = `SELECT id FROM collection WHERE user_id = ?`;
-    connection.query(userCollectionIdQuery, [userId], (err, userCollectionIdResult) => {
+    connection.query(userCollectionIdQuery, [userId], (err, userWishlistResult) => {
       if (err) {
         console.error('Error fetching user collection ID:', err);
         return res.status(500).json({ error: 'Error fetching user collection ID' });
       }
 
       // Check if the user's collection ID exists
-      if (userCollectionIdResult.length === 0) {
+      if (userWishlistResult.length === 0) {
         console.log("User collection ID not found");
         return res.status(404).json({ error: 'User collection ID not found' });
       }
 
-      const userCollectionId = userCollectionIdResult[0].id;
+      const userCollectionId = userWishlistResult[0].id;
 
       // Now that we have the user's collection ID, perform the insert into collections_cards
       const insertQuery = 'INSERT INTO collections_cards (collection_ID, card_ID) VALUES (?, ?)';
@@ -177,26 +189,25 @@ router.post("/remove-from-collection", async (req, res) => {
 
   // Check if user is logged in
   if (!userId) {
-    console.log("User not logged in?");
     return res.status(401).json({ error: 'User not logged in' });
   }
 
   try {
     // Fetch the user's collection ID from the database
     const userCollectionIdQuery = `SELECT id FROM collection WHERE user_id = ?`;
-    connection.query(userCollectionIdQuery, [userId], (err, userCollectionIdResult) => {
+    connection.query(userCollectionIdQuery, [userId], (err, userWishlistResult) => {
       if (err) {
         console.error('Error fetching user collection ID:', err);
         return res.status(500).json({ error: 'Error fetching user collection ID' });
       }
-      
+
       // Check if the user's collection ID exists
-      if (userCollectionIdResult.length === 0) {
+      if (userWishlistResult.length === 0) {
         console.log("User collection ID not found");
         return res.status(404).json({ error: 'User collection ID not found' });
       }
 
-      const userCollectionId = userCollectionIdResult[0].id;
+      const userCollectionId = userWishlistResult[0].id;
 
       // Fetch the cards's card_collection ID
       const collectionCardSQL = 'SELECT id FROM collections_cards WHERE collection_ID = ? AND card_ID = ?';
@@ -223,6 +234,112 @@ router.post("/remove-from-collection", async (req, res) => {
   } catch (error) {
     console.error('Error adding card to collection:', error);
     return res.status(500).json({ error: 'Error adding card to collection' });
+  }
+});
+
+// Add to Wishlist
+router.post("/add-to-wishlist", async (req, res) => {
+  const { cardId } = req.body; // Extract cardId from request body
+  const userId = req.session.user;
+
+  console.log('Card ID: ', cardId);
+  console.log('User ID: ', userId);
+
+  // Check if user is logged in
+  if (!userId) {
+    return res.status(401).json({ error: 'User not logged in' });
+  }
+
+  try {
+    // Fetch the user's wishlist ID from the database
+    const userWishlistIdQuery = `SELECT id FROM wishlist WHERE user_id = ?`;
+    connection.query(userWishlistIdQuery, [userId], (err, userWishlistResult) => {
+      if (err) {
+        console.error('Error fetching user wishlist ID:', err);
+        return res.status(500).json({ error: 'Error fetching user wishlist ID' });
+      }
+
+      // Check if the user's wishlist ID exists
+      if (userWishlistResult.length === 0) {
+        console.log("User wishlist ID not found");
+        return res.status(404).json({ error: 'User wishlist ID not found' });
+      }
+
+      const userWishlistId = userWishlistResult[0].id;
+
+      // Now that we have the user's wishlist ID, perform the insert into wishlist_cards
+      const insertQuery = 'INSERT INTO wishlist_cards (wishlist_ID, card_ID) VALUES (?, ?)';
+      connection.query(insertQuery, [userWishlistId, cardId], (insertErr, result) => {
+        if (insertErr) {
+          console.error('Error adding card to wishlist:', insertErr);
+          return res.status(500).json({ error: 'Error adding card to wishlist' });
+        }
+        console.log('Card added ');
+        return res.status(200).json({ success: true });
+      });
+    });
+  } catch (error) {
+    console.error('Error adding card to wishlist:', error);
+    return res.status(500).json({ error: 'Error adding card to wishlist' });
+  }
+});
+
+// Remove From Wishlist
+router.post("/remove-from-wishlist", async (req, res) => {
+
+  const { cardId } = req.body; // Extract cardId from request body
+  const userId = req.session.user;
+
+  console.log('Card ID: ', cardId);
+  console.log('User ID: ', userId);
+
+  // Check if user is logged in
+  if (!userId) {
+    return res.status(401).json({ error: 'User not logged in' });
+  }
+
+  try {
+   // Fetch the user's wishlist ID from the database
+   const userWishlistIdQuery = `SELECT id FROM wishlist WHERE user_id = ?`;
+   connection.query(userWishlistIdQuery, [userId], (err, userWishlistResult) => {
+     if (err) {
+       console.error('Error fetching user wishlist ID:', err);
+       return res.status(500).json({ error: 'Error fetching user wishlist ID' });
+     }
+
+     // Check if the user's wishlist ID exists
+     if (userWishlistResult.length === 0) {
+       console.log("User wishlist ID not found");
+       return res.status(404).json({ error: 'User wishlist ID not found' });
+     }
+
+     const userWishlistId = userWishlistResult[0].id;
+
+      // Fetch the cards's wishlist_cards ID
+      const wishlistCardSQL = 'SELECT id FROM wishlist_cards WHERE wishlist_id = ? AND card_ID = ?';
+      connection.query(wishlistCardSQL, [userWishlistId, cardId], (err, wishlistCardIdres) => {
+        if (err) {
+          console.error('Error fetching user wishlist ID:', err);
+          return res.status(500).json({ error: 'Error fetching user wishlist ID' });
+        }
+
+        const wishlistCardId = wishlistCardIdres[0].id;
+
+        // Remove card from wishlist_card table
+        const deleteQuery = 'DELETE FROM wishlist_cards WHERE id = ?';
+        connection.query(deleteQuery, [wishlistCardId], (deleteErr, result) => {
+          if (deleteErr) {
+            console.error('Error removing card from wishlist:', deleteErr);
+            return res.status(500).json({ error: 'Error removing card from wishlist' });
+          }
+          console.log('Card removed.');
+          return res.status(200).json({ success: true });
+        });
+      });
+    });
+  } catch (error) {
+    console.error('Error removing card from wishlist:', error);
+    return res.status(500).json({ error: 'Error removing card from wishlist' });
   }
 });
 
