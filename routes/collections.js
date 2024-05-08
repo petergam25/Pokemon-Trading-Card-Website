@@ -10,7 +10,7 @@ router.get('/my-collections', (req, res) => {
         console.log('Unauthorized access to my collection page.');
         return res.status(403).send('You must be logged in to view this page.');
     }
-    
+
     const errorMessage = '';
     const userId = req.session.user;
 
@@ -114,38 +114,47 @@ router.post('/delete-collection', (req, res) => {
     });
 });
 
+// BROWSE COLLECTIONS
+router.get('/browse', (req, res) => {
 
-// Helper function to render collections page with error message
-function renderCollectionsWithError(req, res, errorMessage) {
+    const errorMessage = '';
     const userId = req.session.user;
-    const userCollectionsSQL = `SELECT * FROM collection WHERE user_id = ? AND collection_type_ID = 1`;
 
+    const userCollectionsSQL = `SELECT * FROM collection WHERE collection_type_ID = 1`
     connection.query(userCollectionsSQL, [userId], (err, userCollections) => {
         if (err) {
             console.error(err);
             return res.status(500).send('Internal Server Error');
         }
 
+        console.log('Trying to render')
         res.render('collections/collections', {
             user: req.session.user,
             displayName: req.session.displayName,
             collectionList: userCollections,
             errorMessage,
         });
-    });
-}
+    })
+});
 
 // VIEW COLLECTION
 router.get('/:collectionID', (req, res) => {
-    const collectionID = req.params.collectionID;   // Get the series ID from URL params
+
+    const collectionID = req.params.collectionID;   // Get the collection ID from URL params
     const page = parseInt(req.query.page) || 1;     // Default to page 1 if no query param provided
     const limit = parseInt(req.query.limit) || 25;  // Default to 20 if no query param provided
     const offset = (page - 1) * limit;              // Calculate the offset based on the page and limit
     const query = req.query.query || '';            // Default query to blank
     const sort = req.query.sort || 'name ASC';      // Default sort to Series_ID
-    const userId = req.session.user;
 
-    if (req.session.user) {
+    // Get collection owner user ID
+    let collectionOwnerIdSQL = `SELECT user_id from collection WHERE id = ?`
+    connection.query(collectionOwnerIdSQL, [collectionID], (err, ownerUserId) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Internal Server Error');
+        }
+
         // Get collection_cards from the users collection using collection id
         let UserCollectionCardsSQL = `SELECT * FROM collections_cards WHERE collection_ID = ?`
         connection.query(UserCollectionCardsSQL, [collectionID], (err, UserCollectionCards) => {
@@ -154,7 +163,7 @@ router.get('/:collectionID', (req, res) => {
                 return res.status(500).send('Internal Server Error');
             }
 
-            const cardIDs = UserCollectionCards.map(card => card.card_ID);
+            const userCollection = UserCollectionCards.map(card => card.card_ID);
 
             // Query to fetch all cards
             let allCardsSQL = `SELECT * FROM cards WHERE id IN (SELECT card_ID FROM collections_cards WHERE collection_ID = ? ) AND name LIKE ?`;
@@ -176,7 +185,7 @@ router.get('/:collectionID', (req, res) => {
                     }
 
                     // Render your page with the paginated data and total pages
-                    res.render('cards/cards', {
+                    res.render('collections/collectiondetails', {
                         user: req.session.user,
                         displayName: req.session.displayName,
                         cardsList: collectionCards,
@@ -186,22 +195,34 @@ router.get('/:collectionID', (req, res) => {
                         currentPage: page,
                         totalPages,
                         totalRecords,
-                        userCollection: cardIDs,
+                        userCollection,
+                        ownerUserId: ownerUserId[0].user_id,
+                        collectionID
                     });
                 });
             });
         })
-
-    } else {
-        console.log('Unauthorized access to my collection page.');
-        res.status(403).send('You must be logged in to view this page.');
-    }
+    })
 });
 
+// Helper function to render collections page with error message
+function renderCollectionsWithError(req, res, errorMessage) {
+    const userId = req.session.user;
+    const userCollectionsSQL = `SELECT * FROM collection WHERE user_id = ? AND collection_type_ID = 1`;
 
-// BROWSE COLLECTIONS
-router.get('/browse', (req, res) => {
-    res.redirect('/');
-});
+    connection.query(userCollectionsSQL, [userId], (err, userCollections) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Internal Server Error');
+        }
+
+        res.render('collections/collections', {
+            user: req.session.user,
+            displayName: req.session.displayName,
+            collectionList: userCollections,
+            errorMessage,
+        });
+    });
+}
 
 module.exports = router;

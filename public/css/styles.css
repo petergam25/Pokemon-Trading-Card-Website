@@ -1,0 +1,35 @@
+.card-img-custom-2 {
+    height: 300px;
+    width: 100%;
+    border-radius: .375rem;
+}
+
+.symbol-img {
+    height: 35px;
+    object-fit: fill;
+}
+
+.card-img {
+    height: auto;
+    object-fit: fill;
+}
+
+.btn-svg {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .btn-svg svg {
+    flex-shrink: 0;
+    margin-right: 5px;
+  }
+
+  .series-img-custom {
+    max-height: 5rem;
+    max-width: 100%;
+}
+
+.sets-img-custom {
+    max-height: 5rem;
+    max-width: 100%;
+}

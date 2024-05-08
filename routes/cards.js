@@ -4,21 +4,15 @@ const connection = require('../database'); // Import database connection
 
 // CARDS
 router.get('/', (req, res) => {
-  const page = parseInt(req.query.page) || 1; // Default to page 1 if no query param provided
-  const limit = parseInt(req.query.limit) || 25; // Default to 20 if no query param provided
-  const offset = (page - 1) * limit; // Calculate the offset based on the page and limit
-  const userId = req.session.user;
-
-  console.log('Page: ', page);
-  console.log('Limit: ', limit);
-  console.log('Offset: ', offset);
-
-  const query = req.query.query || ''; // Default query to blank
-  const sort = req.query.sort || 'name ASC'; // Default sort to Series_ID
+  const page = parseInt(req.query.page) || 1;     // Default to page 1 if no query param provided
+  const limit = parseInt(req.query.limit) || 25;  // Default to 20 if no query param provided
+  const offset = (page - 1) * limit;              // Calculate the offset based on the page and limit
+  const query = req.query.query || '';            // Default query to blank
+  const sort = req.query.sort || 'name ASC';      // Default sort to Series_ID
 
   let cardIDs = []; // Initialize cardIDs as an empty array
 
-  // Query to count total records without applying limit and offset
+  // Query for total cards in database
   const countSQL = `SELECT COUNT(*) AS totalCount FROM cards WHERE name LIKE ?`;
   console.log(countSQL);
   connection.query(countSQL, [`%${query}%`], (err, countResult) => {
@@ -27,35 +21,29 @@ router.get('/', (req, res) => {
       return res.status(500).send('Internal Server Error');
     }
 
-    const totalRecords = countResult[0].totalCount; // Total records in the filtered result set
+    const totalRecords = countResult[0].totalCount;
     const totalPages = Math.ceil(totalRecords / limit);
 
-    console.log('Total Records:', totalRecords);
-    console.log('Total Pages:', totalPages);
 
     if (req.session.user) {
-
+      // Query for users collection
       let UserCollectionIdSQL = `SELECT id FROM collection WHERE user_id = ? AND collection_type_ID = 1`;
-      connection.query(UserCollectionIdSQL, [userId], (err, UserCollectionId) => {
+      connection.query(UserCollectionIdSQL, [req.session.user], (err, UserCollectionId) => {
         if (err) {
           console.error(err);
           return res.status(500).send('Internal Server Error');
         }
 
-        console.log('User ID: ', userId)
-        console.log('Collection ID: ', UserCollectionId[0].id);
-
+        // Query for users cards in collection
         let UserCollectionCardsSQL = `SELECT * FROM collections_cards WHERE collection_ID = ?`
         connection.query(UserCollectionCardsSQL, [UserCollectionId[0].id], (err, UserCollectionCards) => {
           if (err) {
             console.error(err);
             return res.status(500).send('Internal Server Error');
           }
-
           const cardIDs = UserCollectionCards.map(card => card.card_ID);
           
-
-          // Query to fetch paginated data with limit and offset
+          // Query for fetch paginated data with limit and offset
           let cardsSQL = `SELECT * FROM cards WHERE name LIKE ? ORDER BY ${sort} LIMIT ? OFFSET ?`;
           console.log(cardsSQL);
           connection.query(cardsSQL, [`%${query}%`, limit, offset], (err, result) => {
@@ -64,9 +52,6 @@ router.get('/', (req, res) => {
               return res.status(500).send('Internal Server Error');
             }
 
-            console.log('Better cards in collection: ', cardIDs);
-
-            // Render your page with the paginated data and total pages
             res.render('cards/cards', {
               user: req.session.user,
               displayName: req.session.displayName,
@@ -84,22 +69,19 @@ router.get('/', (req, res) => {
       });
 
     } else {
-      // Query to fetch paginated data with limit and offset
+      // Query for fetch paginated data with limit and offset
       let cardsSQL = `SELECT * FROM cards WHERE name LIKE ? ORDER BY ${sort} LIMIT ? OFFSET ?`;
       console.log(cardsSQL);
-      connection.query(cardsSQL, [`%${query}%`, limit, offset], (err, result) => {
+      connection.query(cardsSQL, [`%${query}%`, limit, offset], (err, cardsArray) => {
         if (err) {
           console.error(err);
           return res.status(500).send('Internal Server Error');
         }
 
-        console.log(cardIDs);
-
-        // Render your page with the paginated data and total pages
         res.render('cards/cards', {
           user: req.session.user,
           displayName: req.session.displayName,
-          cardsList: result,
+          cardsList: cardsArray,
           limit,
           currentQuery: query,
           currentSort: sort,
@@ -119,7 +101,6 @@ router.get('/:cardsId', (req, res) => {
 
   // Query the database to fetch details of the specified series
   const cardsSQL = `SELECT * FROM cards WHERE id = ?`;
-
   connection.query(cardsSQL, [cardsId], (err, cardsResult) => {
     if (err) {
       // Handle database query error
@@ -210,6 +191,7 @@ router.post("/remove-from-collection", async (req, res) => {
         console.error('Error fetching user collection ID:', err);
         return res.status(500).json({ error: 'Error fetching user collection ID' });
       }
+      
       // Check if the user's collection ID exists
       if (userCollectionIdResult.length === 0) {
         console.log("User collection ID not found");

@@ -3,8 +3,6 @@ General:
     Code modularity
     Add graphics and info for home page
     Make a footer
-    .env file
-    Global css file
 
 Account:
     Finish account settings page with deleting data
@@ -33,15 +31,8 @@ Navbar:
     browse collections)
     Fix navbar expansion
     Not rendering home correctly?
-
-Notifications?
-    ???
     
 Cards / Sets / Series:
     Compare cards
     Filters for cards
-    Progress bars on sets, series
-    Opacity increase on owned cards (logged in)  
 
-Trading system:
-    ???
