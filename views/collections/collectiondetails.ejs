@@ -2,286 +2,275 @@
 <html lang="en">
 
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cards</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-  <link rel="stylesheet" href="/css/styles.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+        <%= collectionName %> by <%= collectionOwnerDisplayName %>
+    </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 
 <body>
 
-  <%- include('../partials/header.ejs') %>
+    <%- include('../partials/header.ejs') %>
 
-  <main class="mt-3">
-    <div class="container">
+        <main class="mt-3">
+            <div class="container">
 
-      <div class="d-flex row align-items-center">
+                <% if (user!=collectionOwnerUserId && user) { %>
+                    <div class="d-flex row align-items-center">
 
-        <!-- Rate Button -->
-        <div class="col-auto">
-          <button class="btn btn-outline-success rate-btn" data-collectionid="<%= collectionID %>">
-            Rate this collection
-          </button>
-        </div>
+                        <!-- Rate Button -->
+                        <div class="col-auto">
+                            <button class="btn btn-outline-success rate-btn" data-collectionid="<%= collectionID %>">
+                                Rate this collection
+                            </button>
+                        </div>
+                        <!-- Comments -->
+                        <div class="col-auto">
+                            <button class="btn btn-outline-secondary ">
+                                Add a comment
+                            </button>
+                        </div>
+                        <!-- Comments -->
+                        <div class="col-auto">
+                            <button class="btn btn-outline-secondary ">
+                                View comments
+                            </button>
+                        </div>
 
-        <!-- Comments -->
-        <div class="col-auto">
-            <button class="btn btn-outline-secondary ">
-              Add a comment
-            </button>
-          </div>
+                    </div>
+                    <% } %>
 
-        <!-- Comments -->
-        <div class="col-auto">
-          <button class="btn btn-outline-secondary ">
-            View comments
-          </button>
-        </div>
+                        <div class="my-3 fw-medium">
+                            <%= collectionName %> by <%= collectionOwnerDisplayName %>
+                        </div>
 
-      </div>
+                        <div class="my-3 fw-medium">
+                            <% const startCard=((currentPage - 1) * limit) + 1; %>
+                                <% const endCard=Math.min(currentPage * limit, totalRecords); %>
+                                    <%= startCard %> - <%= endCard %> of <%= totalRecords %> cards
+                        </div>
 
-      <div class="my-3 fw-medium">
-        <%= collectionName %> by <%= collectionOwnerDisplayName %>
-      </div>
+                        <hr>
 
-      <div class="my-3 fw-medium">
-        <% const startCard=((currentPage - 1) * limit) + 1; %>
-        <% const endCard=Math.min(currentPage * limit, totalRecords); %>
-        <%= startCard %> - <%= endCard %> of <%= totalRecords %> cards
-      </div>
+                        <!-- Filters -->
+                        <div class="row align-items-center mb-3">
+                            <!-- Sort By -->
+                            <div class="col-md-auto d-flex align-items-center my-2">
+                                <label for="sortBy" class="me-2">Sort by</label>
+                                <div class="flex-grow-1">
+                                    <select class="form-select" id="sortBy">
+                                        <option value="name ASC" selected>Card name (A-Z)</option>
+                                        <option value="name DESC">Card name (Z-A)</option>
+                                        <option value="rarity ASC">Rarity (asc)</option>
+                                        <option value="rarity DESC">Rarity (desc)</option>
+                                    </select>
+                                </div>
+                            </div>
 
-      <hr>
+                            <!-- Page Limit Dropdown -->
+                            <div class="col-md-auto d-flex align-items-center my-2">
+                                <label for="pageLimitSelect" class="me-2">Page Limit</label>
+                                <div class="flex-grow-1">
+                                    <select class="form-select" id="pageLimitSelect" aria-label="Page Limit Select">
+                                        <option value="25" selected>25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
+                                </div>
+                            </div>
 
-      <!-- Filters -->
-      <div class="row align-items-center mb-3">
-        <!-- Sort By -->
-        <div class="col-md-auto d-flex align-items-center my-2">
-          <label for="sortBy" class="me-2">Sort by</label>
-          <div class="flex-grow-1">
-            <select class="form-select" id="sortBy">
-              <option value="name ASC" selected>Card name (A-Z)</option>
-              <option value="name DESC">Card name (Z-A)</option>
-              <option value="rarity ASC">Rarity (asc)</option>
-              <option value="rarity DESC">Rarity (desc)</option>
-            </select>
-          </div>
-        </div>
+                        </div>
 
-        <!-- Page Limit Dropdown -->
-        <div class="col-md-auto d-flex align-items-center my-2">
-          <label for="pageLimitSelect" class="me-2">Page Limit</label>
-          <div class="flex-grow-1">
-            <select class="form-select" id="pageLimitSelect" aria-label="Page Limit Select">
-              <option value="25" selected>25</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="row row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 g-2">
-        <% cardsList.slice(0, limit).forEach((card)=> { %>
-        <!-- This renders an individual card -->
-        <%- include('../partials/card.ejs', { card, userCollection, user}) %>
-        <% }); %>
-      </div>
-
-
-      <!-- This renders pagination -->
-      <%- include('../partials/pagination.ejs', { currentPage, totalPages}) %>
-
-    </div>
-  </main>
-
-  <%- include('../partials/footer.ejs') %>
-
-  <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <!-- Bootstrap Bundle with Popper.js -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-
-  <script>
-    $(document).ready(function() {
-      let sortBy = ''; // Variable to store the current sort value
-      let currentQuery = ''; // Variable to store the current query value
-      let currentPage = 1; // Variable to store the current page
-      let selectedLimit = 25; // Variable to store the selected page limit
-      let typingTimer; // Timer identifier
-      const doneTypingInterval = 1000; // Time in milliseconds (0.5 seconds)
-
-      // Function to update the URL based on filter values
-      function updateURL() {
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.set('sort', sortBy);
-        urlParams.set('query', currentQuery);
-        urlParams.set('page', currentPage);
-        urlParams.set('limit', selectedLimit);
-
-        window.location.search = urlParams.toString(); // Update the URL
-      }
-
-      // Function to update the sets count based on displayed sets
-      function updateCardsCount() {
-        const cardsCount = $('.row a').length; // Get the number of sets displayed
-        $('#cardsCount').text(`${cardsCount} Cards`); // Update the header text
-      }
-
-      // Call the function initially and whenever sets are updated
-      updateCardsCount();
-
-      const urlParams = new URLSearchParams(window.location.search);
-      sortBy = urlParams.get('sort') || 'name ASC';
-      currentQuery = urlParams.get('query') || '';
-      currentPage = parseInt(urlParams.get('page')) || 1;
-      selectedLimit = parseInt(urlParams.get('limit')) || 25;
+                        <div class="row row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 g-2">
+                            <% cardsList.slice(0, limit).forEach((card)=> { %>
+                                <!-- This renders an individual card -->
+                                <%- include('../partials/card.ejs', { card, userCollection, user}) %>
+                                    <% }); %>
+                        </div>
 
 
-      $('#sortBy').val(sortBy);
-      $('#search').val(currentQuery);
-      $('#pageLimitSelect').val(selectedLimit);
+                        <!-- This renders pagination -->
+                        <%- include('../partials/pagination.ejs', { currentPage, totalPages}) %>
 
-      $('#sortBy').change(function() {
-        sortBy = $(this).val();
-        currentPage = 1; // Reset page to 1 when sorting changes
-        updateURL();
-        updateCardsCount();
-      });
+            </div>
+        </main>
 
-      $('#search').on('input', function() {
-        clearTimeout(typingTimer); // Clear the previous timer
-        currentQuery = $(this).val();
-        typingTimer = setTimeout(function() {
-          currentPage = 1; // Reset page to 1 when search changes
-          updateURL();
-          updateCardsCount();
-        }, doneTypingInterval);
-      });
+        <%- include('../partials/footer.ejs') %>
 
-      $('.pagination-link').click(function(e) {
-        e.preventDefault();
-        currentPage = $(this).data('page');
-        updateURL();
-        updateCardsCount();
-      });
+            <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+            <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+            <!-- Bootstrap Bundle with Popper.js -->
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+                integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+                crossorigin="anonymous"></script>
 
-      $('#pageLimitSelect').change(function() {
-        selectedLimit = $(this).val();
-        currentPage = 1; // Reset page to 1 when page limit changes
-        updateURL();
-        updateCardsCount();
-      });
+            <script>
+                $(document).ready(function () {
+                    let sortBy = 'name ASC'; // Variable to store the current sort value
+                    let currentPage = 1; // Variable to store the current page
+                    let selectedLimit = 25; // Variable to store the selected page limit
 
-      $(document).on('click', '.add-to-collection-btn', async function() {
-        const button = $(this); // Reference to the button clicked
-        const cardId = button.data('cardid');
-        console.log("Button clicked to add card ID:", cardId);
+                    // Function to update the URL based on filter values
+                    function updateURL() {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        urlParams.set('sort', sortBy);
+                        urlParams.set('page', currentPage);
+                        urlParams.set('limit', selectedLimit);
+                        window.location.search = urlParams.toString(); // Update the URL
+                    }
 
-        try {
-          const response = await fetch("/cards/add-to-collection", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              cardId: cardId
-            }), // Pass cardId as an object in the body
-          });
+                    // Function to update the sets count based on displayed sets
+                    function updateCardsCount() {
+                        const cardsCount = $('.row a').length; // Get the number of sets displayed
+                        $('#cardsCount').text(`${cardsCount} Cards`); // Update the header text
+                    }
 
-          if (response.ok) {
-            const data = await response.json();
-            console.log("Card added to collection:", data);
+                    // Call the function initially and whenever sets are updated
+                    updateCardsCount();
 
-            button.text('Remove from collection');
-            button.removeClass('btn-outline-success');
-            button.addClass('btn-outline-danger');
-            button.removeClass('add-to-collection-btn');
-            button.addClass('remove-from-collection-btn');
-          } else {
-            console.error("Failed to add card to collection:", response.statusText);
-            // Handle error response if needed
-          }
-        } catch (error) {
-          console.error("Error adding card to collection:", error);
-          // Handle network or other errors
-        }
-      });
+                    const urlParams = new URLSearchParams(window.location.search);
+                    sortBy = urlParams.get('sort') || 'name ASC';
+                    currentPage = parseInt(urlParams.get('page')) || 1;
+                    selectedLimit = parseInt(urlParams.get('limit')) || 25;
 
-      $(document).on('click', '.remove-from-collection-btn', async function() {
-        const button = $(this); // Reference to the button clicked
-        const cardId = button.data('cardid');
-        console.log("Button clicked to remove card ID:", cardId);
+                    $('#sortBy').val(sortBy);
+                    $('#pageLimitSelect').val(selectedLimit);
 
-        try {
-          console.log('Trying to fetch route...');
-          const response = await fetch("/cards/remove-from-collection", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              cardId: cardId
-            }), // Pass cardId as an object in the body
-          });
+                    $('#sortBy').change(function () {
+                        sortBy = $(this).val();
+                        currentPage = 1; // Reset page to 1 when sorting changes
+                        updateURL();
+                        updateCardsCount();
+                    });
 
-          if (response.ok) {
-            const data = await response.json();
-            console.log("Card removed from collection:", data);
+                    $('#pageLimitSelect').change(function () {
+                        selectedLimit = $(this).val();
+                        currentPage = 1; // Reset page to 1 when page limit changes
+                        updateURL();
+                        updateCardsCount();
+                    });
 
-            button.text('Add to collection');
-            button.addClass('btn-outline-success');
-            button.removeClass('btn-outline-danger');
-            button.addClass('add-to-collection-btn');
-            button.removeClass('remove-from-collection-btn');
-          } else {
-            console.error("Failed to remove card from collection:", response.statusText);
-            // Handle error response if needed
-          }
-        } catch (error) {
-          console.error("Error removing card from collection:", error);
-          // Handle network or other errors
-        }
-      });
-    });
+                    $('.pagination-link').click(function (e) {
+                        e.preventDefault();
+                        currentPage = $(this).data('page');
+                        updateURL();
+                        updateCardsCount();
+                    });
 
-    $(document).on('click', '.rate-btn', async function() {
-      const button = $(this);
-      const collectionId = button.data('collectionid');
-      console.log("Button clicked to rate collection ID:", collectionId);
+                    // SCRIPTS FOR CARD PARTIAL
+                    $(document).on('click', '.add-to-collection-btn', async function () {
+                        const button = $(this); // Reference to the button clicked
+                        const cardId = button.data('cardid');
+                        console.log("Button clicked to add card ID:", cardId);
 
-      try {
-        console.log('Trying to fetch route...');
-        const response = await fetch("/cards/add-to-collection", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            cardId: cardId
-          }), // Pass cardId as an object in the body
-        });
+                        try {
+                            const response = await fetch("/cards/add-to-collection", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify({
+                                    cardId: cardId
+                                }), // Pass cardId as an object in the body
+                            });
 
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Card added to collection:", data);
+                            if (response.ok) {
+                                const data = await response.json();
+                                console.log("Card added to collection:", data);
 
-          button.text('Remove from collection');
-          button.removeClass('btn-outline-success');
-          button.addClass('btn-outline-danger');
-          button.removeClass('add-to-collection-btn');
-          button.addClass('remove-from-collection-btn');
-        } else {
-          console.error("Failed to add card to collection:", response.statusText);
-          // Handle error response if needed
-        }
-      } catch (error) {
-        console.error("Error adding card to collection:", error);
-        // Handle network or other errors
-      }
-    });
-  </script>
+                                button.text('Remove from collection');
+                                button.removeClass('btn-outline-success');
+                                button.addClass('btn-outline-danger');
+                                button.removeClass('add-to-collection-btn');
+                                button.addClass('remove-from-collection-btn');
+                            } else {
+                                console.error("Failed to add card to collection:", response.statusText);
+                                // Handle error response if needed
+                            }
+                        } catch (error) {
+                            console.error("Error adding card to collection:", error);
+                            // Handle network or other errors
+                        }
+                    });
+
+                    $(document).on('click', '.remove-from-collection-btn', async function () {
+                        const button = $(this); // Reference to the button clicked
+                        const cardId = button.data('cardid');
+                        console.log("Button clicked to remove card ID:", cardId);
+
+                        try {
+                            console.log('Trying to fetch route...');
+                            const response = await fetch("/cards/remove-from-collection", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify({
+                                    cardId: cardId
+                                }), // Pass cardId as an object in the body
+                            });
+
+                            if (response.ok) {
+                                const data = await response.json();
+                                console.log("Card removed from collection:", data);
+
+                                button.text('Add to collection');
+                                button.addClass('btn-outline-success');
+                                button.removeClass('btn-outline-danger');
+                                button.addClass('add-to-collection-btn');
+                                button.removeClass('remove-from-collection-btn');
+                            } else {
+                                console.error("Failed to remove card from collection:", response.statusText);
+                                // Handle error response if needed
+                            }
+                        } catch (error) {
+                            console.error("Error removing card from collection:", error);
+                            // Handle network or other errors
+                        }
+                    });
+                });
+
+                // RATE BUTTON
+                $(document).on('click', '.rate-btn', async function () {
+                    const button = $(this);
+                    const collectionId = button.data('collectionid');
+                    console.log("Button clicked to rate collection ID:", collectionId);
+
+                    try {
+                        console.log('Trying to fetch route...');
+                        const response = await fetch("/cards/add-to-collection", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                cardId: cardId
+                            }), // Pass cardId as an object in the body
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            console.log("Card added to collection:", data);
+
+                            button.text('Remove from collection');
+                            button.removeClass('btn-outline-success');
+                            button.addClass('btn-outline-danger');
+                            button.removeClass('add-to-collection-btn');
+                            button.addClass('remove-from-collection-btn');
+                        } else {
+                            console.error("Failed to add card to collection:", response.statusText);
+                            // Handle error response if needed
+                        }
+                    } catch (error) {
+                        console.error("Error adding card to collection:", error);
+                        // Handle network or other errors
+                    }
+                });
+            </script>
 </body>
 
 </html>
