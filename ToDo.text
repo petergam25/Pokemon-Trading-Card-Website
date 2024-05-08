@@ -15,13 +15,10 @@ Dashboard:
     Cards in collection per type
     Cards in collection per rarity
     Cards in wishlist
-    Liked collections
 
 Collection:
-    Browse others collections
     Comments on the collection
-    Like the collection
-    Dropdown of collections for all collections and wishlist
+    Can only rate a collection one time
 
 Wishlist:
     Allow user to add card to their wishlist

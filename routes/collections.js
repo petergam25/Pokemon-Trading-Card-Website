@@ -114,13 +114,46 @@ router.post('/delete-collection', (req, res) => {
     });
 });
 
+// ADD RATING
+router.post('/add-collection-rating', [], (req, res) => {
+    
+    const { collectionID, collectionRating } = req.body;
+    const userId = req.session.user;
+
+    if (!req.session.user) {
+        console.log('Unauthorized access to my collection page.');
+        return res.status(403).send('You must be logged in to view this page.');
+    }
+
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        const errorMessage = errors.array()[0].msg;
+        return renderMyCollectionsWithError(req, res, errorMessage);
+    }
+
+    addRatingSQL = `INSERT INTO rating (value, user_id, collection_id) VALUES (?, ?, ?)`
+    connection.query(addRatingSQL, [collectionRating, userId, collectionID], (err,result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Internal Server Error');
+        }
+        console.log('Rating Added');
+        res.redirect(`/collections/${collectionID}`);
+    })
+});
+
 // BROWSE COLLECTIONS
 router.get('/browse', (req, res) => {
 
-    const errorMessage = '';
-    const userId = req.session.user;
-
-    const collectionsSQL = `SELECT collection.*, users.displayName AS ownerDisplayName FROM collection JOIN users ON collection.user_ID = users.user_ID`
+    // Get all collections
+    const collectionsSQL = `
+    SELECT collection.*, users.displayName AS ownerDisplayName, AVG(rating.value) AS averageRating
+    FROM collection
+    JOIN users ON collection.user_id = users.user_ID
+    LEFT JOIN rating ON collection.id = rating.collection_id
+    GROUP BY collection.id, users.displayName
+`;
     connection.query(collectionsSQL, (err, userCollections) => {
         if (err) {
             console.error(err);
@@ -133,7 +166,7 @@ router.get('/browse', (req, res) => {
             user: req.session.user,
             displayName: req.session.displayName,
             collectionList: userCollections,
-            errorMessage,
+            errorMessage: '',
         });
     })
 });
@@ -150,7 +183,14 @@ router.get('/:collectionID', (req, res) => {
     let userCollection = [];
 
     // Get specific collection
-    let collectionSQL = `SELECT collection.*, users.displayName AS ownerDisplayName FROM collection JOIN users ON collection.user_id = users.user_ID WHERE id = ?`
+    const collectionSQL = `
+        SELECT collection.*, users.displayName AS ownerDisplayName, AVG(rating.value) AS averageRating
+        FROM collection
+        JOIN users ON collection.user_id = users.user_ID
+        LEFT JOIN rating ON collection.id = rating.collection_id
+        WHERE collection.id = ?
+        GROUP BY collection.id, users.displayName
+    `;
     connection.query(collectionSQL, [collectionID], (err, collection) => {
         if (err) {
             console.error(err);
@@ -176,13 +216,6 @@ router.get('/:collectionID', (req, res) => {
                     return res.status(500).send('Internal Server Error');
                 }
 
-                console.log(cardsSQL);
-                console.log(collectionID);
-                console.log(limit);
-                console.log(offset);
-
-                console.log(collectionCards);
-
                 if (req.session.user) {
 
                     // Get collection_cards from the users collection using collection id
@@ -201,6 +234,8 @@ router.get('/:collectionID', (req, res) => {
 
                         const userCollection = UserCollectionCards.map(card => card.card_ID);
 
+                        console.log(collection[0]);
+
                         // Render your page with the paginated data and total pages
                         res.render('collections/collectiondetails', {
                             user: req.session.user,
@@ -212,13 +247,13 @@ router.get('/:collectionID', (req, res) => {
                             currentPage: page,
                             totalPages,
                             totalRecords,
-                            collectionID,
-                            collectionName: collection[0].name,
-                            collectionOwnerUserId: collection[0].user_id,
-                            collectionOwnerDisplayName: collection[0].ownerDisplayName,
+                            collection : collection[0],
                         });
                     })
                 } else {
+
+                    console.log(collection[0]);
+
                     // Render your page with the paginated data and total pages
                     res.render('collections/collectiondetails', {
                         user: req.session.user,
@@ -230,10 +265,7 @@ router.get('/:collectionID', (req, res) => {
                         currentPage: page,
                         totalPages,
                         totalRecords,
-                        collectionID,
-                        collectionName: collection[0].name,
-                        collectionOwnerUserId: collection[0].user_id,
-                        collectionOwnerDisplayName: collection[0].ownerDisplayName,
+                        collection : collection[0],
                     });
                 }
             });
