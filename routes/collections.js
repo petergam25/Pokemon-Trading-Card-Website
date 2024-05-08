@@ -148,59 +148,72 @@ router.get('/:collectionID', (req, res) => {
     const sort = req.query.sort || 'name ASC';      // Default sort to Series_ID
 
     // Get collection owner user ID
-    let collectionOwnerIdSQL = `SELECT user_id from collection WHERE id = ?`
-    connection.query(collectionOwnerIdSQL, [collectionID], (err, ownerUserId) => {
+    let collectionOwnerIdSQL = `SELECT * FROM collection WHERE id = ?`
+    connection.query(collectionOwnerIdSQL, [collectionID], (err, collection) => {
         if (err) {
             console.error(err);
             return res.status(500).send('Internal Server Error');
         }
 
-        // Get collection_cards from the users collection using collection id
-        let UserCollectionCardsSQL = `SELECT * FROM collections_cards WHERE collection_ID = ?`
-        connection.query(UserCollectionCardsSQL, [collectionID], (err, UserCollectionCards) => {
+        // Get collection owner user profile
+        let collectionOwnerUserSQL = `SELECT displayName FROM users WHERE user_ID = ?`
+        connection.query(collectionOwnerUserSQL, [collection[0].user_id], (err, collectionUser) => {
             if (err) {
                 console.error(err);
                 return res.status(500).send('Internal Server Error');
             }
 
-            const userCollection = UserCollectionCards.map(card => card.card_ID);
-
-            // Query to fetch all cards
-            let allCardsSQL = `SELECT * FROM cards WHERE id IN (SELECT card_ID FROM collections_cards WHERE collection_ID = ? ) AND name LIKE ?`;
-            connection.query(allCardsSQL, [collectionID, `%${query}%`], (err, allCards) => {
+            // Get collection_cards from the users collection using collection id
+            let UserCollectionCardsSQL = `SELECT * FROM collections_cards WHERE collection_ID = ?`
+            connection.query(UserCollectionCardsSQL, [collectionID], (err, UserCollectionCards) => {
                 if (err) {
                     console.error(err);
                     return res.status(500).send('Internal Server Error');
                 }
 
-                const totalRecords = allCards.length;
-                const totalPages = Math.ceil(totalRecords / limit);
+                const userCollection = UserCollectionCards.map(card => card.card_ID);
 
-                // Query to fetch paginated cards with limit and offset
-                let cardsSQL = `SELECT * FROM cards WHERE id IN (SELECT card_ID FROM collections_cards WHERE collection_ID = ? ) AND name LIKE ? ORDER BY ${sort} LIMIT ? OFFSET ?`;
-                connection.query(cardsSQL, [collectionID, `%${query}%`, limit, offset], (err, collectionCards) => {
+                // Query to fetch all cards
+                let allCardsSQL = `SELECT * FROM cards WHERE id IN (SELECT card_ID FROM collections_cards WHERE collection_ID = ? ) AND name LIKE ?`;
+                connection.query(allCardsSQL, [collectionID, `%${query}%`], (err, allCards) => {
                     if (err) {
                         console.error(err);
                         return res.status(500).send('Internal Server Error');
                     }
 
-                    // Render your page with the paginated data and total pages
-                    res.render('collections/collectiondetails', {
-                        user: req.session.user,
-                        displayName: req.session.displayName,
-                        cardsList: collectionCards,
-                        limit,
-                        currentQuery: query,
-                        currentSort: sort,
-                        currentPage: page,
-                        totalPages,
-                        totalRecords,
-                        userCollection,
-                        ownerUserId: ownerUserId[0].user_id,
-                        collectionID
+                    const totalRecords = allCards.length;
+                    const totalPages = Math.ceil(totalRecords / limit);
+
+                    console.log(totalPages);
+
+                    // Query to fetch paginated cards with limit and offset
+                    let cardsSQL = `SELECT * FROM cards WHERE id IN (SELECT card_ID FROM collections_cards WHERE collection_ID = ? ) AND name LIKE ? ORDER BY ${sort} LIMIT ? OFFSET ?`;
+                    connection.query(cardsSQL, [collectionID, `%${query}%`, limit, offset], (err, collectionCards) => {
+                        if (err) {
+                            console.error(err);
+                            return res.status(500).send('Internal Server Error');
+                        }
+
+                        // Render your page with the paginated data and total pages
+                        res.render('collections/collectiondetails', {
+                            user: req.session.user,
+                            displayName: req.session.displayName,
+                            cardsList: collectionCards,
+                            limit,
+                            currentQuery: query,
+                            currentSort: sort,
+                            currentPage: page,
+                            totalPages,
+                            totalRecords,
+                            userCollection,
+                            collectionOwnerDisplayName: collectionUser[0].displayName,
+                            ownerUserId: collection[0].user_id,
+                            collectionID,
+                            collectionName: collection[0].name,
+                        });
                     });
                 });
-            });
+            })
         })
     })
 });
