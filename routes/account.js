@@ -75,8 +75,8 @@ router.post('/register', [
                     const userId = userResult.insertId;
 
                     // Create a new collection for the user
-                    const insertCollectionQuery = 'INSERT INTO collection (name, collection_type_ID, user_id) VALUES (?, 1, ?)';
-                    connection.query(insertCollectionQuery, ['Base Collection', userId], async (err, collectionResult) => {
+                    const insertCollectionQuery = 'INSERT INTO collection (name, user_id) VALUES (?, ?)';
+                    connection.query(insertCollectionQuery, ['My Collection', userId], async (err, collectionResult) => {
                         if (err) {
                             // Handle collection insertion error
                             console.error('Error inserting collection:', err);
@@ -85,8 +85,8 @@ router.post('/register', [
                         }
 
                         // Create a new wishlist for the user
-                        const insertWishlistQuery = 'INSERT INTO collection (name, collection_type_ID, user_id) VALUES (? , 2, ?)';
-                        connection.query(insertWishlistQuery, ['User Wishlist', userId], async (err, wishlistResult) => {
+                        const insertWishlistQuery = 'INSERT INTO wishlist (user_id) VALUES (?)';
+                        connection.query(insertWishlistQuery, [userId], async (err, wishlistResult) => {
                             if (err) {
                                 // Handle wishlist insertion error
                                 console.error('Error inserting wishlist:', err);

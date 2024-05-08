@@ -14,7 +14,6 @@ router.get('/', (req, res) => {
 
   // Query for total cards in database
   const countSQL = `SELECT COUNT(*) AS totalCount FROM cards WHERE name LIKE ?`;
-  console.log(countSQL);
   connection.query(countSQL, [`%${query}%`], (err, countResult) => {
     if (err) {
       console.error(err);
@@ -27,7 +26,7 @@ router.get('/', (req, res) => {
 
     if (req.session.user) {
       // Query for users collection
-      let UserCollectionIdSQL = `SELECT id FROM collection WHERE user_id = ? AND collection_type_ID = 1`;
+      let UserCollectionIdSQL = `SELECT id FROM collection WHERE user_id = ?`;
       connection.query(UserCollectionIdSQL, [req.session.user], (err, UserCollectionId) => {
         if (err) {
           console.error(err);
@@ -136,7 +135,7 @@ router.post("/add-to-collection", async (req, res) => {
 
   try {
     // Fetch the user's collection ID from the database
-    const userCollectionIdQuery = `SELECT id FROM collection WHERE user_id = ? AND collection_type_ID = 1`;
+    const userCollectionIdQuery = `SELECT id FROM collection WHERE user_id = ?`;
     connection.query(userCollectionIdQuery, [userId], (err, userCollectionIdResult) => {
       if (err) {
         console.error('Error fetching user collection ID:', err);
@@ -185,7 +184,7 @@ router.post("/remove-from-collection", async (req, res) => {
 
   try {
     // Fetch the user's collection ID from the database
-    const userCollectionIdQuery = `SELECT id FROM collection WHERE user_id = ? AND collection_type_ID = 1`;
+    const userCollectionIdQuery = `SELECT id FROM collection WHERE user_id = ?`;
     connection.query(userCollectionIdQuery, [userId], (err, userCollectionIdResult) => {
       if (err) {
         console.error('Error fetching user collection ID:', err);

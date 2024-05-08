@@ -1,0 +1,64 @@
+<!-- This renders pagination -->
+<!-- { currentPage, totalPages } -->
+
+<% if (totalPages <=10) { %>
+    <!-- Simple pagination for <= 10 pages -->
+    <nav aria-label="Page navigation example" class="my-3">
+        <ul class="pagination justify-content-center">
+            <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                <a href="#" class="page-link pagination-link" data-page="<%= currentPage - 1 %>">Previous</a>
+            </li>
+            <% for (let i = 1; i <= totalPages; i++) { %>
+                <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                    <a href="#" class="page-link pagination-link" data-page="<%= i %>"><%= i %></a>
+                </li>
+            <% } %>
+            <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                <a href="#" class="page-link pagination-link" data-page="<%= currentPage + 1 %>">Next</a>
+            </li>
+        </ul>
+    </nav>
+    <% } else { %>
+        <!-- Complex pagination for > 10 pages -->
+        <nav aria-label="Page navigation example" class="my-3">
+            <ul class="pagination justify-content-center">
+                <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                    <a href="#" class="page-link pagination-link"
+                        data-page="<%= currentPage - 1 %>">Previous</a>
+                </li>
+                <li class="page-item <%= currentPage === 1 ? 'active' : '' %>">
+                    <a href="#" class="page-link pagination-link" data-page="1">1</a>
+                </li>
+                <% if (currentPage> 4) { %>
+                    <li class="page-item">
+                        <a href="#" class="page-link pagination-link disabled">...</a>
+                    </li>
+                    <% } %>
+                        <% for (let i=Math.max(2, currentPage - 3); i <=Math.min(currentPage + 3,
+                            totalPages); i++) { %>
+                            <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                                <a href="#" class="page-link pagination-link" data-page="<%= i %>">
+                                    <%= i %>
+                                </a>
+                            </li>
+                            <% } %>
+                                <% if (currentPage < totalPages - 3) { %>
+                                    <li class="page-item">
+                                        <a href="#" class="page-link pagination-link disabled">...</a>
+                                    </li>
+                                    <li
+                                        class="page-item <%= currentPage === totalPages ? 'active' : '' %>">
+                                        <a href="#" class="page-link pagination-link"
+                                            data-page="<%= totalPages %>">
+                                            <%= totalPages %>
+                                        </a>
+                                    </li>
+                                    <% } %>
+                                        <li
+                                            class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                                            <a href="#" class="page-link pagination-link"
+                                                data-page="<%= currentPage + 1 %>">Next</a>
+                                        </li>
+            </ul>
+        </nav>
+        <% } %>

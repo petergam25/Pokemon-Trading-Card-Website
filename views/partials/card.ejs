@@ -1,0 +1,43 @@
+<!-- This renders an individual card -->
+<!-- {card, userCollection} -->
+
+<div class="card-container">
+   
+    <a href="/cards/<%= card.id %>">
+        <img src="<%= card.image %>" class="card-img-custom-2" alt="<%= card.image %> Logo">
+    </a>
+
+    <div>
+
+        <div class="d-flex justify-content-between">
+            <div>
+                <%= card.rarity %>
+            </div>
+            <div>
+                <%= card.name %>
+            </div>
+            <div>
+
+            </div>
+        </div>
+
+        <% if (user) { %>
+            <div class="buttons-container d-flex justify-content-evenly"
+                data-cardid="<%= card.id %>">
+                <% if (userCollection.includes(card.id)) { %>
+                    <button class="btn btn-outline-danger remove-from-collection-btn"
+                        data-cardid="<%= card.id %>">
+                        Remove from collection
+                    </button>
+                    <% } else { %>
+                        <button class="btn btn-outline-success add-to-collection-btn"
+                            data-cardid="<%= card.id %>">
+                            Add to collection
+                        </button>
+                        <% } %>
+            </div>
+            <% } %>
+
+    </div>
+
+</div>

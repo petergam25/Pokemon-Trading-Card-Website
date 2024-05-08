@@ -14,7 +14,7 @@ router.get('/my-collections', (req, res) => {
     const errorMessage = '';
     const userId = req.session.user;
 
-    const userCollectionsSQL = `SELECT * FROM collection WHERE user_id = ? AND collection_type_ID = 1`
+    const userCollectionsSQL = `SELECT * FROM collection WHERE user_id = ?`
     connection.query(userCollectionsSQL, [userId], (err, userCollections) => {
         if (err) {
             console.error(err);
@@ -64,7 +64,7 @@ router.post('/add-collection', [
         }
 
         // Insert New Collection
-        const insertCollectionSQL = `INSERT INTO collection (name, collection_type_ID, user_id) VALUES (?, 1, ?)`;
+        const insertCollectionSQL = `INSERT INTO collection (name, user_id) VALUES (?, ?)`;
         connection.query(insertCollectionSQL, [newCollectionName, req.session.user], (err, result) => {
             if (err) {
                 console.error('Error inserting collection:', err);
@@ -120,7 +120,7 @@ router.get('/browse', (req, res) => {
     const errorMessage = '';
     const userId = req.session.user;
 
-    const userCollectionsSQL = `SELECT * FROM collection WHERE collection_type_ID = 1`
+    const userCollectionsSQL = `SELECT * FROM collection`
     connection.query(userCollectionsSQL, [userId], (err, userCollections) => {
         if (err) {
             console.error(err);
@@ -208,7 +208,7 @@ router.get('/:collectionID', (req, res) => {
 // Helper function to render collections page with error message
 function renderCollectionsWithError(req, res, errorMessage) {
     const userId = req.session.user;
-    const userCollectionsSQL = `SELECT * FROM collection WHERE user_id = ? AND collection_type_ID = 1`;
+    const userCollectionsSQL = `SELECT * FROM collection WHERE user_id = ?`;
 
     connection.query(userCollectionsSQL, [userId], (err, userCollections) => {
         if (err) {

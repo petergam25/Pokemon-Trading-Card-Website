@@ -86,11 +86,7 @@
 
                 <div class="row row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 g-2">
                     <% cardsList.forEach((card)=> { %>
-                        <a href="/cards/<%= card.id %>">
-                            <% if (card.image) { %>
-                                <img src="<%= card.image %>" class="card-img-custom-2" alt="<%= card.image %> Logo">
-                                <% } %>
-                        </a>
+                        <%- include('../partials/card.ejs', { card, userCollection, user}) %>
                         <% }); %>
                 </div>
 
@@ -172,6 +168,75 @@
                     currentPage = 1; // Reset page to 1 when page limit changes
                     updateURL();
                     updateCardsCount();
+                });
+
+                // SCRIPTS FOR CARD PARTIAL
+                $(document).on('click', '.add-to-collection-btn', async function () {
+                    const button = $(this); // Reference to the button clicked
+                    const cardId = button.data('cardid');
+                    console.log("Button clicked to add card ID:", cardId);
+
+                    try {
+                        console.log('Trying to fetch route...');
+                        const response = await fetch("/cards/add-to-collection", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({ cardId: cardId }),  // Pass cardId as an object in the body
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            console.log("Card added to collection:", data);
+
+                            button.text('Remove from collection');
+                            button.removeClass('btn-outline-success');
+                            button.addClass('btn-outline-danger');
+                            button.removeClass('add-to-collection-btn');
+                            button.addClass('remove-from-collection-btn');
+                        } else {
+                            console.error("Failed to add card to collection:", response.statusText);
+                            // Handle error response if needed
+                        }
+                    } catch (error) {
+                        console.error("Error adding card to collection:", error);
+                        // Handle network or other errors
+                    }
+                });
+
+                $(document).on('click', '.remove-from-collection-btn', async function () {
+                    const button = $(this); // Reference to the button clicked
+                    const cardId = button.data('cardid');
+                    console.log("Button clicked to remove card ID:", cardId);
+
+                    try {
+                        console.log('Trying to fetch route...');
+                        const response = await fetch("/cards/remove-from-collection", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({ cardId: cardId }),  // Pass cardId as an object in the body
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            console.log("Card removed from collection:", data);
+
+                            button.text('Add to collection');
+                            button.addClass('btn-outline-success');
+                            button.removeClass('btn-outline-danger');
+                            button.addClass('add-to-collection-btn');
+                            button.removeClass('remove-from-collection-btn');
+                        } else {
+                            console.error("Failed to remove card from collection:", response.statusText);
+                            // Handle error response if needed
+                        }
+                    } catch (error) {
+                        console.error("Error removing card from collection:", error);
+                        // Handle network or other errors
+                    }
                 });
             });
         </script>

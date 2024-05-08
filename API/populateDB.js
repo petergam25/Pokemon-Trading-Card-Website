@@ -1,14 +1,3 @@
-//node C:\Users\peter\Desktop\tradecard\API\populateDB.js
-
-/*
-const axios = require('axios');
-const express = require("express");
-const app = express();
-const mysql = require("mysql2");
-
-app.set("view engine", "ejs");
-*/
-
 const axios = require('axios');
 const mysql = require('mysql2/promise');
 
@@ -21,7 +10,7 @@ const pool = mysql.createPool({
     port: '3306',
 });
 
-/*
+
 async function insertSeriesFromAPI() {
     try {
         // Fetch data from the API
@@ -58,7 +47,7 @@ async function insertSeriesFromAPI() {
         console.error('Error inserting series:', error);
     }
 }
-*/
+
 
 
 

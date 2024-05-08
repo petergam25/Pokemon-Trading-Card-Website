@@ -27,9 +27,6 @@ router.get('/', (req, res) => {
         ${order}
     `;
 
-    console.log('Sets SQL: ', setsSQL);
-    console.log('Series SQL: ', seriesSQL);
-
     connection.query(setsSQL, [`%${query}%`], (err, setList) => {
         if (err) throw err;
 
@@ -47,56 +44,86 @@ router.get('/:setId', (req, res) => {
     const sort = req.query.sort || 'name ASC'; // Default sort to Series_ID
     const setId = req.params.setId; // Get the set ID from URL params
 
+    let cardIDs = []; // Initialize cardIDs as an empty array
+
     // Query the database to fetch details of the specified set
-    const setSQL = `
-        SELECT * 
-        FROM sets 
-        WHERE id = ?
-    
-    `;
-    const cardsInSetSQL = `
-        SELECT * 
-        FROM cards 
-        WHERE set_ID = ?
-        AND name LIKE ?
-        ORDER BY ${sort}
-    `;
-
-    console.log(setSQL);
-    console.log(cardsInSetSQL);
-
+    const setSQL = `SELECT * FROM sets WHERE id = ?`;
     connection.query(setSQL, [setId], (err, result) => {
         if (err) {
             console.error('Error querying set: ', err)
             res.status(500).send('Internal server error.');
             return;
         }
-        console.log(result);
+
+        // Set not found
         if (result.length === 0) {
-            // Handle case where set is not found
             res.status(404).send('Set not found.');
+
         } else {
-            // Query the database to fetch all cards belonging to the set
-            connection.query(cardsInSetSQL, [setId, `%${query}%`], (err, cardsResult) => {
-                if (err) {
-                    console.error('Error querying set: ', err)
-                    res.status(500).send('Internal server error.');
-                    return;
-                }
 
-                console.log(cardsResult);
-                console.log('Got here');
+            if (req.session.user) {
+                // Query for users collection
+                let UserCollectionIdSQL = `SELECT id FROM collection WHERE user_id = ?`;
+                connection.query(UserCollectionIdSQL, [req.session.user], (err, UserCollectionId) => {
+                    if (err) {
+                        console.error(err);
+                        return res.status(500).send('Internal Server Error');
+                    }
 
-                // Render the set details page with the set data and card data
-                res.render('sets/setsdetails', {
-                    user: req.session.user,
-                    displayName: req.session.displayName,
-                    set: result[0],
-                    cardsList: cardsResult,
-                    currentQuery: query,
-                    currentSort: sort,
+                    // Query for users cards in collection
+                    let UserCollectionCardsSQL = `SELECT * FROM collections_cards WHERE collection_ID = ?`
+                    connection.query(UserCollectionCardsSQL, [UserCollectionId[0].id], (err, UserCollectionCards) => {
+                        if (err) {
+                            console.error(err);
+                            return res.status(500).send('Internal Server Error');
+                        }
+                        const cardIDs = UserCollectionCards.map(card => card.card_ID);
+
+                        // Query the database to fetch all cards belonging to the set
+                        const cardsInSetSQL = `SELECT * FROM cards WHERE set_ID = ? AND name LIKE ? ORDER BY ${sort}`;
+                        connection.query(cardsInSetSQL, [setId, `%${query}%`], (err, cardsResult) => {
+                            if (err) {
+                                console.error('Error querying set: ', err)
+                                res.status(500).send('Internal server error.');
+                                return;
+                            }
+
+                            // Render the set details page with the set data and card data
+                            res.render('sets/setsdetails', {
+                                user: req.session.user,
+                                displayName: req.session.displayName,
+                                set: result[0],
+                                cardsList: cardsResult,
+                                currentQuery: query,
+                                currentSort: sort,
+                                userCollection: cardIDs,
+                            });
+                        });
+                    });
                 });
-            });
+
+            } else {
+                // Query the database to fetch all cards belonging to the set
+                const cardsInSetSQL = `SELECT * FROM cards WHERE set_ID = ? AND name LIKE ? ORDER BY ${sort}`;
+                connection.query(cardsInSetSQL, [setId, `%${query}%`], (err, cardsResult) => {
+                    if (err) {
+                        console.error('Error querying set: ', err)
+                        res.status(500).send('Internal server error.');
+                        return;
+                    }
+
+                    // Render the set details page with the set data and card data
+                    res.render('sets/setsdetails', {
+                        user: req.session.user,
+                        displayName: req.session.displayName,
+                        set: result[0],
+                        cardsList: cardsResult,
+                        currentQuery: query,
+                        currentSort: sort,
+                        userCollection: cardIDs,
+                    });
+                });
+            }
         }
     });
 });
