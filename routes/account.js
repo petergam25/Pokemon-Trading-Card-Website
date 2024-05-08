@@ -76,7 +76,7 @@ router.post('/register', [
 
                     // Create a new collection for the user
                     const insertCollectionQuery = 'INSERT INTO collection (name, collection_type_ID, user_id) VALUES (?, 1, ?)';
-                    connection.query(insertCollectionQuery, ['User Collection', userId], async (err, collectionResult) => {
+                    connection.query(insertCollectionQuery, ['Base Collection', userId], async (err, collectionResult) => {
                         if (err) {
                             // Handle collection insertion error
                             console.error('Error inserting collection:', err);
@@ -406,11 +406,20 @@ router.post('/update-password', [
 
 // Function to query user details and render settings page with error message
 function renderSettingsWithError(req, res, errorMessage, successMessage) {
-    const uid = req.session.user;
-    const userQuery = `SELECT * FROM users WHERE user_ID = "${uid}" `;
+    const userQuery = `SELECT * FROM users WHERE user_ID = "${req.session.user}" `;
     connection.query(userQuery, (err, row) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Internal Server Error');
+        }
+
         const firstrow = row[0];
-        return res.status(500).render('account/settings', { user: req.session.user, displayName: req.session.displayName, userdata: firstrow, errorMessage, successMessage });
+        return res.status(500).render('account/settings', { 
+            user: req.session.user, 
+            displayName: req.session.displayName, 
+            userdata: firstrow, 
+            errorMessage, 
+            successMessage });
     });
 }
 

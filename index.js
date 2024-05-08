@@ -30,14 +30,14 @@ const cardsRoutes = require('./routes/cards');
 const setsRoutes = require('./routes/sets');
 const seriesRoutes = require('./routes/series');
 const accountRoutes = require('./routes/account');
-const collectionRoutes = require('./routes/collection')
+const collectionRoutes = require('./routes/collections')
 
 // Mount routes
 app.use('/cards', cardsRoutes);
 app.use('/sets', setsRoutes);
 app.use('/series', seriesRoutes);
 app.use('/account', accountRoutes);
-app.use('/collection', collectionRoutes);
+app.use('/collections', collectionRoutes);
 
 // HOME PAGE
 app.get('/', (req, res) => {
