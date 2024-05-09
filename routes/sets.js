@@ -11,28 +11,26 @@ router.get('/', (req, res) => {
 
     // Define the base SQL queries
     let setsSQL = `
-        SELECT * 
-        FROM sets 
-        WHERE name LIKE ?
-        ORDER BY ${sort}
-        ${order}
-    `;
+        SELECT sets.*, COUNT(cards.id) AS cardCountTotal
+        FROM sets
+        LEFT JOIN cards ON sets.id = cards.set_ID
+        WHERE sets.name LIKE ?
+        GROUP BY sets.id
+        ORDER BY ${sort} ${order}`;
 
     let seriesSQL = `
         SELECT DISTINCT series.* 
         FROM series 
         JOIN sets ON series.id = sets.series_ID 
         WHERE sets.name LIKE ?
-        ORDER BY series.id
-        ${order}
-    `;
+        ORDER BY series.id ${order}`;
 
     connection.query(setsSQL, [`%${query}%`], (err, setList) => {
         if (err) throw err;
 
         connection.query(seriesSQL, [`%${query}%`], (err, seriesList) => {
             if (err) throw err;
-            res.render('sets/sets', { user: req.session.user, displayName: req.session.displayName, setlist: setList, seriesList: seriesList, currentQuery: query, currentSort: sort, currentOrder: order }); // Pass currentFilter to the view
+            res.render('sets/sets', { user: req.session.user, displayName: req.session.displayName, setList, seriesList, currentQuery: query, currentSort: sort, currentOrder: order }); // Pass currentFilter to the view
         });
     });
 });

@@ -36,31 +36,11 @@
                         </form>
                     </div>
 
-                    <!-- Collection Checks -->
-                    <div class="col-auto">
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
-                            <label class="form-check-label" for="flexRadioDefault1">
-                                All
-                            </label>
-                        </div>
-                    </div>
-                    <div class="col-auto">
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2"
-                                checked>
-                            <label class="form-check-label" for="flexRadioDefault2">
-                                In collection
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="my-3 fw-medium" id="seriesCount">
 
                 </div>
 
-                <hr>
+                <hr class="mb-0">
 
                 <div class="row row-cols-1 row-cols-sm-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 row-cols-xxl-4 g-3">
                     <% serieslist.forEach((series)=> { %>
@@ -101,6 +81,25 @@
 
             <script>
                 $(document).ready(function () {
+                    let typingTimer; // Timer identifier
+                    const doneTypingInterval = 1000; // Time in milliseconds (0.5 seconds)
+
+                    // Function to update the URL based on filter values
+                    function updateURL() {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        urlParams.set('query', currentQuery);
+                        window.location.search = urlParams.toString(); // Update the URL
+                    }
+
+                    // Auto search
+                    $('#search').on('input', function () {
+                        clearTimeout(typingTimer); // Clear the previous timer
+                        currentQuery = $(this).val();
+                        typingTimer = setTimeout(function () {
+                            updateURL();
+                        }, doneTypingInterval);
+                    });
+
                     const urlParams = new URLSearchParams(window.location.search);
                     const initialQuery = urlParams.get('query'); // Get initial query value
 

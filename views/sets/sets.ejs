@@ -101,7 +101,7 @@
 
                             <div
                                 class="row row-cols-1 row-cols-sm-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 row-cols-xxl-4 g-3">
-                                <% setlist.forEach((set)=> { %>
+                                <% setList.forEach((set)=> { %>
                                     <% if (set.series_ID===series.id) { %>
                                         <div class="col">
                                             <div class="card p-3" style="height: 273px">
@@ -140,7 +140,7 @@
                                     <!-- Directly render sets sorted by release date without series title -->
                                     <div
                                         class="row row-cols-sm-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 row-cols-xxl-5 g-3">
-                                        <% setlist.forEach((set)=> { %>
+                                        <% setList.forEach((set)=> { %>
                                             <div class="col">
                                                 <div class="card p-3" style="height: 273px">
                                                     <div class="d-flex align-items-center mb-2">
