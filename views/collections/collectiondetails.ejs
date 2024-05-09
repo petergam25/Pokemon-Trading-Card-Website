@@ -22,50 +22,52 @@
                 <% if (user!=collection.user_id && user) { %>
                     <div class="d-flex row align-items-center">
 
-                        <% if (userCollectionRating == undefined) { %> 
-                        <!-- Rate Button -->
-                        <div class="col-auto">
-                            <button class="btn btn-outline-success rate-btn" data-collectionid="<%= collection.id %>"
-                                id="rateCollectionBtn">
-                                Rate this collection
-                            </button>
-                        </div>
-                        <% } else { %> 
-                            Your rating: <%= parseFloat(userCollectionRating.value).toFixed(2) %> out of 5
+                        <% if (userCollectionRating==undefined) { %>
+                            <!-- Rate Button -->
                             <div class="col-auto">
-                                <button class="btn btn-outline-success rate-btn" data-collectionid="<%= collection.id %>"
-                                    id="rateCollectionBtn">
-                                    Change rating
+                                <button class="btn btn-outline-success"
+                                    data-collectionid="<%= collection.id %>" id="rateCollectionBtn">
+                                    Rate this collection
                                 </button>
                             </div>
-                            <% } %>
-                        
-                        <!-- Comments -->
-                        <div class="col-auto">
-                            <button class="btn btn-outline-secondary ">
-                                Add a comment
-                            </button>
-                        </div>
-                        <!-- Comments -->
-                        <div class="col-auto">
-                            <button class="btn btn-outline-secondary ">
-                                View comments
-                            </button>
-                        </div>
+                            <% } else { %>
+                                <!-- Change Rating Button -->
+                                Your rating: <%= parseFloat(userCollectionRating.value).toFixed(2) %> out of 5
+                                    <div class="col-auto">
+                                        <button class="btn btn-outline-success"
+                                            data-collectionid="<%= collection.id %>" id="rateCollectionBtn">
+                                            Change rating
+                                        </button>
+                                    </div>
+                                    <% } %>
+
+                                        <!-- Add Comment Button -->
+                                        <div class="col-auto">
+                                            <button class="btn btn-outline-secondary" id="addCommentBtn">
+                                                Add a comment
+                                            </button>
+                                        </div>
+                                        <!-- View Comments Button -->
+                                        <div class="col-auto">
+                                            <button class="btn btn-outline-secondary ">
+                                                View comments
+                                            </button>
+                                        </div>
 
                     </div>
                     <% } %>
 
                         <div class="my-3 fw-medium">
-                            <%= collection.name %> by <%= collection.ownerDisplayName %> 
+                            <%= collection.name %> by <%= collection.ownerDisplayName %>
                         </div>
 
                         <div>
-                            Rated:  <% if (collection.averageRating !== undefined && collection.averageRating !== null) { %>
+                            Rated: <% if (collection.averageRating !==undefined && collection.averageRating !==null) {
+                                %>
                                 Average Rating: <%= parseFloat(collection.averageRating).toFixed(2) %>
-                                <% } else { %>
-                                Not yet rated
-                                <% } %>
+                                    <% } else { %>
+                                        Not yet rated
+                                        <% } %>
                         </div>
 
                         <div class="my-3 fw-medium">
@@ -116,6 +118,18 @@
                         <!-- This renders pagination -->
                         <%- include('../partials/pagination.ejs', { currentPage, totalPages}) %>
 
+                        <!-- Comments Section -->
+                        Comments Section
+                        <% collectionComments.forEach((comment)=> { %>
+                            <div>
+                                <%= comment.ownerDisplayName %>
+                                <%= comment.created_at %>
+                                <%= comment.text %>
+                                <% }); %>
+                            </div>
+                            
+
+                            <!-- Modal form to rate collection -->
                             <div class="modal fade" id="rateCollectionModal" tabindex="-1">
                                 <div class="modal-dialog">
                                     <div class="modal-content">
@@ -126,10 +140,8 @@
                                         </div>
                                         <div class="modal-body">
 
-                                            <!-- Form to rate collection -->
                                             <form id="rateCollectionForm" action="/collections/add-collection-rating"
                                                 method="POST">
-                                                <!-- Hidden input fields for collection ID and user ID -->
                                                 <input type="hidden" id="collectionID" name="collectionID"
                                                     value="<%= collection.id %>">
                                                 <input type="hidden" id="userID" name="userID" value="<%= user %>">
@@ -140,12 +152,43 @@
                                                     <input type="range" class="form-range" id="collectionRating"
                                                         name="collectionRating" min="0" max="5" step="0.1" required>
                                                     <output for="collectionRating" id="ratingValue">2.5</output>
-                                                    <!-- This displays the current value of the range input -->
                                                 </div>
+
                                                 <div id="ratingHelp" class="form-text mb-3">
                                                     Slide to select a rating between 0 and 5.
                                                 </div>
+
                                                 <button type="submit" class="btn btn-primary">Rate Collection</button>
+
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Add Comment Modal -->
+                            <div class="modal fade" id="addCommentModal" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Add Comment</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                        </div>
+
+                                        <div class="modal-body">
+                                            <!-- Form to add a comment to a collection -->
+                                            <form id="addCommentForm" action="/collections/add-comment" method="POST">
+                                                <div class="mb-3">
+                                                    <label for="commentText" class="form-label">Your Comment</label>
+                                                    <input type="text" class="form-control" id="commentText"
+                                                        name="commentText" required>
+                                                </div>
+                                                <!-- Hidden input fields for user ID and collection ID -->
+                                                <input type="hidden" id="userId" name="userId" value="<%= user %>">
+                                                <input type="hidden" id="collectionId" name="collectionId"
+                                                    value="<%= collection.id %>">
+                                                <button type="submit" class="btn btn-primary">Add Comment</button>
                                             </form>
                                         </div>
                                     </div>
@@ -165,6 +208,7 @@
 
             <script>
                 $(document).ready(function () {
+
                     let sortBy = 'name ASC'; // Variable to store the current sort value
                     let currentPage = 1; // Variable to store the current page
                     let selectedLimit = 25; // Variable to store the selected page limit
@@ -215,6 +259,8 @@
                         updateURL();
                         updateCardsCount();
                     });
+
+
 
                     // SCRIPTS FOR CARD PARTIAL
                     $(document).on('click', '.add-to-collection-btn', async function () {
@@ -291,74 +337,74 @@
 
                 // ADD TO WISHLIST BUTTON
                 $(document).on('click', '.add-to-wishlist-btn', async function () {
-                        const button = $(this); // Reference to the button clicked
-                        const cardId = button.data('cardid');
-                        console.log("Button clicked to add to wishlist card ID:", cardId);
+                    const button = $(this); // Reference to the button clicked
+                    const cardId = button.data('cardid');
+                    console.log("Button clicked to add to wishlist card ID:", cardId);
 
-                        try {
-                            const response = await fetch("/cards/add-to-wishlist", {
-                                method: "POST",
-                                headers: {
-                                    "Content-Type": "application/json"
-                                },
-                                body: JSON.stringify({
-                                    cardId: cardId
-                                }), // Pass cardId as an object in the body
-                            });
+                    try {
+                        const response = await fetch("/cards/add-to-wishlist", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                cardId: cardId
+                            }), // Pass cardId as an object in the body
+                        });
 
-                            if (response.ok) {
-                                const data = await response.json();
-                                console.log("Card added to wishlist:", data);
+                        if (response.ok) {
+                            const data = await response.json();
+                            console.log("Card added to wishlist:", data);
 
-                                button.removeClass('btn-outline-success');
-                                button.addClass('btn-outline-danger');
-                                button.removeClass('add-to-wishlist-btn');
-                                button.addClass('remove-from-wishlist-btn');
-                            } else {
-                                console.error("Failed to add card to wishlist:", response.statusText);
-                                // Handle error response if needed
-                            }
-                        } catch (error) {
-                            console.error("Error adding card to wishlist:", error);
-                            // Handle network or other errors
+                            button.removeClass('btn-outline-success');
+                            button.addClass('btn-outline-danger');
+                            button.removeClass('add-to-wishlist-btn');
+                            button.addClass('remove-from-wishlist-btn');
+                        } else {
+                            console.error("Failed to add card to wishlist:", response.statusText);
+                            // Handle error response if needed
                         }
-                    });
+                    } catch (error) {
+                        console.error("Error adding card to wishlist:", error);
+                        // Handle network or other errors
+                    }
+                });
 
-                    // REMOVE FROM WISHLIST BUTTON
-                    $(document).on('click', '.remove-from-wishlist-btn', async function () {
-                        const button = $(this); // Reference to the button clicked
-                        const cardId = button.data('cardid');
-                        console.log("Button clicked to remove from wishlist card ID:", cardId);
+                // REMOVE FROM WISHLIST BUTTON
+                $(document).on('click', '.remove-from-wishlist-btn', async function () {
+                    const button = $(this); // Reference to the button clicked
+                    const cardId = button.data('cardid');
+                    console.log("Button clicked to remove from wishlist card ID:", cardId);
 
-                        try {
-                            console.log('Trying to fetch route...');
-                            const response = await fetch("/cards/remove-from-wishlist", {
-                                method: "POST",
-                                headers: {
-                                    "Content-Type": "application/json"
-                                },
-                                body: JSON.stringify({
-                                    cardId: cardId
-                                }), // Pass cardId as an object in the body
-                            });
+                    try {
+                        console.log('Trying to fetch route...');
+                        const response = await fetch("/cards/remove-from-wishlist", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                cardId: cardId
+                            }), // Pass cardId as an object in the body
+                        });
 
-                            if (response.ok) {
-                                const data = await response.json();
-                                console.log("Card removed from wishlist:", data);
+                        if (response.ok) {
+                            const data = await response.json();
+                            console.log("Card removed from wishlist:", data);
 
-                                button.addClass('btn-outline-success');
-                                button.removeClass('btn-outline-danger');
-                                button.removeClass('remove-from-wishlist-btn');
-                                button.addClass('add-to-wishlist-btn');
-                            } else {
-                                console.error("Failed remove card from wishlist:", response.statusText);
-                                // Handle error response if needed
-                            }
-                        } catch (error) {
-                            console.error("Error removing card from wishlist:", error);
-                            // Handle network or other errors
+                            button.addClass('btn-outline-success');
+                            button.removeClass('btn-outline-danger');
+                            button.removeClass('remove-from-wishlist-btn');
+                            button.addClass('add-to-wishlist-btn');
+                        } else {
+                            console.error("Failed remove card from wishlist:", response.statusText);
+                            // Handle error response if needed
                         }
-                    });
+                    } catch (error) {
+                        console.error("Error removing card from wishlist:", error);
+                        // Handle network or other errors
+                    }
+                });
 
                 // Get the range input and output element
                 const rangeInput = document.getElementById('collectionRating');
@@ -374,7 +420,14 @@
                     document.getElementById('rateCollectionBtn').addEventListener('click', function () {
                         $('#rateCollectionModal').modal('show');
                     });
+
+                    // ADD COMMENT BUTTON
+                    document.getElementById('addCommentBtn').addEventListener('click', function () {
+                        $('#addCommentModal').modal('show');
+                    });
                 });
+
+
             </script>
 </body>
 

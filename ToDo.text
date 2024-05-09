@@ -17,11 +17,14 @@ Dashboard:
     Cards in wishlist
 
 Collection:
-    Comments on the collection
-    Can only rate a collection one time
 
 Wishlist:
-    Allow user to add card to their wishlist
+
+Trading system:
+    ???
+
+Notifications:
+    ???
 
 Navbar:
     Restructure links (browse, home, dashboard, my collection, 
@@ -32,4 +35,5 @@ Navbar:
 Cards / Sets / Series:
     Compare cards
     Filters for cards
+    Card details page
 

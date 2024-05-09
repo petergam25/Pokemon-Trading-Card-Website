@@ -114,7 +114,7 @@ router.post('/delete-collection', (req, res) => {
     });
 });
 
-// ADD RATING
+// ADD RATING TO COLLECTION
 router.post('/add-collection-rating', [], (req, res) => {
 
     const { collectionID, collectionRating } = req.body;
@@ -143,6 +143,30 @@ router.post('/add-collection-rating', [], (req, res) => {
     })
 });
 
+// ADD COMMENT TO COLLECTION
+router.post('/add-comment', (req, res) => {
+
+    if (!req.session.user) {
+        console.log('Unauthorized access to my collection page.');
+        return res.status(403).send('You must be logged in to view this page.');
+    }
+
+    const { commentText, userId, collectionId } = req.body;
+
+    // Insert the comment into the database
+    const insertCommentQuery = `
+    INSERT INTO comments (user_id, collection_id, text, created_at) 
+    VALUES (?, ?, ?, NOW())`;
+    connection.query(insertCommentQuery, [userId, collectionId, commentText], (err, result) => {
+        if (err) {
+            console.error('Error adding comment:', err);
+            return res.status(500).json({ success: false, message: 'Failed to add comment' });
+        }
+        console.log('Comment Added');
+        res.redirect(`/collections/${collectionId}`);
+    });
+});
+
 // BROWSE COLLECTIONS
 router.get('/browse', (req, res) => {
 
@@ -159,8 +183,6 @@ router.get('/browse', (req, res) => {
             console.error(err);
             return res.status(500).send('Internal Server Error');
         }
-
-        console.log('User collections: ', userCollections);
 
         res.render('collections/collections', {
             user: req.session.user,
@@ -186,114 +208,135 @@ router.get('/:collectionID', (req, res) => {
 
     // Get specific collection
     const collectionSQL = `
-        SELECT collection.*, users.displayName AS ownerDisplayName, AVG(rating.value) AS averageRating
-        FROM collection
-        JOIN users ON collection.user_id = users.user_ID
-        LEFT JOIN rating ON collection.id = rating.collection_id
-        WHERE collection.id = ?
-        GROUP BY collection.id, users.displayName
-    `;
+    SELECT collection.*, users.displayName AS ownerDisplayName, AVG(rating.value) AS averageRating
+    FROM collection
+    JOIN users ON collection.user_id = users.user_ID
+    LEFT JOIN rating ON collection.id = rating.collection_id
+    WHERE collection.id = ?
+    GROUP BY collection.id, users.displayName`;
     connection.query(collectionSQL, [collectionID], (err, collection) => {
         if (err) {
             console.error(err);
             return res.status(500).send('Internal Server Error');
         }
 
-        // Get all cards from specific collection
-        let allCardsSQL = `SELECT * FROM cards WHERE id IN (SELECT card_ID FROM collections_cards WHERE collection_ID = ? )`;
-        connection.query(allCardsSQL, [collectionID], (err, allCards) => {
+        // Get comments from specific collection
+        let collectionCommentsSQL = `
+        SELECT comments.*, users.displayName AS ownerDisplayName
+        FROM  comments 
+        JOIN users ON comments.user_ID = users.user_ID
+        WHERE collection_ID = ?`
+        connection.query(collectionCommentsSQL, [collectionID], (err, collectionComments) => {
             if (err) {
                 console.error(err);
                 return res.status(500).send('Internal Server Error');
             }
 
-            const totalRecords = allCards.length;
-            const totalPages = Math.ceil(totalRecords / limit);
+            console.log(collectionComments);
 
-            // Get paginated cards with limit and offset
-            let cardsSQL = `SELECT * FROM cards WHERE id IN (SELECT card_ID FROM collections_cards WHERE collection_ID = ? ) ORDER BY ${sort} LIMIT ? OFFSET ?`;
-            connection.query(cardsSQL, [collectionID, limit, offset], (err, collectionCards) => {
+            // Get all cards from specific collection
+            let allCardsSQL = `
+            SELECT * 
+            FROM cards 
+            WHERE id IN (SELECT card_ID FROM collections_cards 
+            WHERE collection_ID = ? )`;
+            connection.query(allCardsSQL, [collectionID], (err, allCards) => {
                 if (err) {
                     console.error(err);
                     return res.status(500).send('Internal Server Error');
                 }
 
-                if (req.session.user) {
+                const totalRecords = allCards.length;
+                const totalPages = Math.ceil(totalRecords / limit);
 
-                    // Get users rating value for collection
-                    const userCollectionRatingSQL = `SELECT value FROM rating where collection_id = ? AND user_id = ?`;
-                    connection.query(userCollectionRatingSQL, [collectionID, req.session.user], (err, userCollectionRating) => {
-                        if (err) {
-                            console.error(err);
-                            return res.status(500).send('Internal Server Error');
-                        }
-                        // Get collection_cards from the users collection using collection id
-                        let UserCollectionCardsSQL = `
-                            SELECT * 
-                            FROM collections_cards 
-                            JOIN collection ON collections_cards.collection_ID = collection.id 
-                            JOIN users ON collection.user_id = users.user_ID 
-                            WHERE users.user_ID = ?
-                        `;
-                        connection.query(UserCollectionCardsSQL, [req.session.user], (err, UserCollectionCards) => {
+                // Get paginated cards with limit and offset
+                let cardsSQL = `
+                SELECT * 
+                FROM cards 
+                WHERE id IN (SELECT card_ID FROM collections_cards WHERE collection_ID = ? ) 
+                ORDER BY ${sort} LIMIT ? OFFSET ?`;
+                connection.query(cardsSQL, [collectionID, limit, offset], (err, collectionCards) => {
+                    if (err) {
+                        console.error(err);
+                        return res.status(500).send('Internal Server Error');
+                    }
+
+                    if (req.session.user) {
+                        // Get users rating value for collection
+                        const userCollectionRatingSQL = `SELECT value FROM rating where collection_id = ? AND user_id = ?`;
+                        connection.query(userCollectionRatingSQL, [collectionID, req.session.user], (err, userCollectionRating) => {
                             if (err) {
                                 console.error(err);
                                 return res.status(500).send('Internal Server Error');
                             }
-                            const userCollection = UserCollectionCards.map(card => card.card_ID);
+                            // Get collection_cards from the users collection using collection id
+                            let UserCollectionCardsSQL = `
+                            SELECT * 
+                            FROM collections_cards 
+                            JOIN collection ON collections_cards.collection_ID = collection.id 
+                            JOIN users ON collection.user_id = users.user_ID 
+                            WHERE users.user_ID = ?`;
+                            connection.query(UserCollectionCardsSQL, [req.session.user], (err, UserCollectionCards) => {
+                                if (err) {
+                                    console.error(err);
+                                    return res.status(500).send('Internal Server Error');
+                                }
+                                const userCollection = UserCollectionCards.map(card => card.card_ID);
 
-                            // Get card ids in users wishlist
-                            let userWishlistSQL = `
+                                // Get card ids in users wishlist
+                                let userWishlistSQL = `
                                 SELECT wishlist_cards.card_id 
                                 FROM wishlist_cards 
                                 JOIN wishlist ON wishlist_cards.wishlist_id = wishlist.id
                                 WHERE wishlist.user_id = ?
                             `;
-                            connection.query(userWishlistSQL, [req.session.user], (err, userWishlistCards) => {
-                                if (err) {
-                                    console.error(err);
-                                    return res.status(500).send('Internal Server Error');
-                                }
-                                const userWishlist = userWishlistCards.map(card => card.card_ID);
+                                connection.query(userWishlistSQL, [req.session.user], (err, userWishlistCards) => {
+                                    if (err) {
+                                        console.error(err);
+                                        return res.status(500).send('Internal Server Error');
+                                    }
+                                    const userWishlist = userWishlistCards.map(card => card.card_ID);
 
-                                // Render your page with the paginated data and total pages
-                                res.render('collections/collectiondetails', {
-                                    user: req.session.user,
-                                    displayName: req.session.displayName,
-                                    userCollection,
-                                    userWishlist,
-                                    cardsList: collectionCards,
-                                    limit,
-                                    currentSort: sort,
-                                    currentPage: page,
-                                    totalPages,
-                                    totalRecords,
-                                    collection: collection[0],
-                                    userCollectionRating: userCollectionRating[0],
-                                });
+                                    // Render your page with the paginated data and total pages
+                                    res.render('collections/collectiondetails', {
+                                        user: req.session.user,
+                                        displayName: req.session.displayName,
+                                        userCollection,
+                                        userWishlist,
+                                        cardsList: collectionCards,
+                                        limit,
+                                        currentSort: sort,
+                                        currentPage: page,
+                                        totalPages,
+                                        totalRecords,
+                                        collection: collection[0],
+                                        collectionComments,
+                                        userCollectionRating: userCollectionRating[0],
+                                    });
+                                })
                             })
                         })
-                    })
+                    } else {
 
-                } else {
-
-                    // Render your page with the paginated data and total pages
-                    res.render('collections/collectiondetails', {
-                        user: req.session.user,
-                        displayName: req.session.displayName,
-                        userCollection,
-                        userWishlist,
-                        cardsList: collectionCards,
-                        limit,
-                        currentSort: sort,
-                        currentPage: page,
-                        totalPages,
-                        totalRecords,
-                        collection: collection[0],
-                        userCollectionRating
-                    });
-                }
-            });
+                        // Render your page with the paginated data and total pages
+                        res.render('collections/collectiondetails', {
+                            user: req.session.user,
+                            displayName: req.session.displayName,
+                            userCollection,
+                            userWishlist,
+                            cardsList: collectionCards,
+                            limit,
+                            currentSort: sort,
+                            currentPage: page,
+                            totalPages,
+                            totalRecords,
+                            collection: collection[0],
+                            collectionComments,
+                            userCollectionRating
+                        });
+                    }
+                });
+            })
         })
     })
 });
