@@ -288,14 +288,19 @@ router.get('/:collectionID', (req, res) => {
                                 SELECT wishlist_cards.card_id 
                                 FROM wishlist_cards 
                                 JOIN wishlist ON wishlist_cards.wishlist_id = wishlist.id
-                                WHERE wishlist.user_id = ?
-                            `;
+                                WHERE wishlist.user_id = ?`;
                                 connection.query(userWishlistSQL, [req.session.user], (err, userWishlistCards) => {
                                     if (err) {
                                         console.error(err);
                                         return res.status(500).send('Internal Server Error');
                                     }
-                                    const userWishlist = userWishlistCards.map(card => card.card_ID);
+
+                                    const userWishlist = userWishlistCards.map(card => card.card_id);
+
+                                    console.log('User collection Cards raw', UserCollectionCards);
+                                    console.log('User collection Cards', userCollection);
+                                    console.log('User wishlist Cards raw', userWishlistCards);
+                                    console.log('User wishlist Cards', userWishlist);
 
                                     // Render your page with the paginated data and total pages
                                     res.render('collections/collectiondetails', {

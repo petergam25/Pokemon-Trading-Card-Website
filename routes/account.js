@@ -404,6 +404,156 @@ router.post('/update-password', [
     }
 });
 
+// ERASE DATA
+router.post('/erase-data', [
+    body('currentPassword').trim().notEmpty().withMessage('Current Password is required.'),
+], async (req, res) => {
+
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        // Validation errors
+        renderSettingsWithError(req, res, errors.array()[0].msg, '');
+
+    } else {
+        const userId = req.session.user;
+        const currentPassword = req.body.currentPassword;
+        const eraseCollectionCheck = req.body.eraseCollectionsCheck;
+        const eraseWishlistCheck = req.body.eraseWishlistCheck;
+
+        console.log(eraseCollectionCheck);
+        console.log(eraseWishlistCheck);
+        console.log(currentPassword);
+
+
+        // Check if the current password matches the user's actual password
+        const checkPasswordQuery = 'SELECT * FROM users WHERE user_ID = ?';
+        connection.query(checkPasswordQuery, [userId], async (err, rows) => {
+            if (err) {
+                console.error('Error checking password:', err);
+                return res.status(500).send('Error checking password');
+            }
+            if (rows.length === 0) {
+                // User not found
+                renderSettingsWithError(req, res, 'User not found.', '');
+            };
+
+            const hashedPasswordFromDB = rows[0].password;
+
+            // Compare the entered password with the hashed password from the database using bcrypt
+            try {
+                const passwordMatch = await bcrypt.compare(currentPassword, hashedPasswordFromDB);
+                if (passwordMatch) {
+                    if (eraseCollectionCheck === 'on') {
+                        console.log('Trying to delete collection.')
+                        deleteUserCollectionSQL = `DELETE FROM collection WHERE user_id = ?`;
+                        connection.query(deleteUserCollectionSQL, [userId], (err, result) => {
+                            if (err) {
+                                console.error('Error deleting collection:', err);
+                                return res.status(500).send('Error deleting collection');
+                            }
+
+                            // Success response if collection is deleted
+                            console.log('Collection deleted successfully')
+
+
+                            if (eraseWishlistCheck === 'on') {
+                                console.log('Trying to delete wishlist.')
+                                deleteUserWishlistSQL = `DELETE FROM wishlist WHERE user_id = ?`;
+                                connection.query(deleteUserWishlistSQL, [userId], (err, result) => {
+                                    if (err) {
+                                        console.error('Error deleting wishlist:', err);
+                                        return res.status(500).send('Error deleting wishlist');
+                                    }
+
+                                    // Success response if collection is deleted
+                                    console.log('Collection deleted successfully')
+                                });
+                            }
+
+                            renderSettingsWithError(req, res, '', 'Data deleted successfully');
+
+                        });
+                    }
+
+                } else {
+                    // Passwords do not match
+                    renderSettingsWithError(req, res, 'Incorrect password.', '');
+
+                }
+            } catch (error) {
+                // Error comparing passwords
+                renderSettingsWithError(req, res, 'An error occurred. Please try again.', '');
+
+            }
+        });
+    }
+});
+
+// CLOSE ACCOUNT
+router.post('/close-account', [
+    body('currentPassword').trim().notEmpty().withMessage('Current Password is required.'),
+], async (req, res) => {
+
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        // Validation errors
+        renderSettingsWithError(req, res, errors.array()[0].msg, '');
+
+    } else {
+        const userId = req.session.user;
+        const currentPassword = req.body.currentPassword;
+
+        // Check if the current password matches the user's actual password
+        const checkPasswordQuery = 'SELECT * FROM users WHERE user_ID = ?';
+        connection.query(checkPasswordQuery, [userId], async (err, rows) => {
+            if (err) {
+                console.error('Error checking password:', err);
+                return res.status(500).send('Error checking password');
+            }
+            if (rows.length === 0) {
+                // User not found
+                renderSettingsWithError(req, res, 'User not found.', '');
+            };
+
+            const hashedPasswordFromDB = rows[0].password;
+
+            // Compare the entered password with the hashed password from the database using bcrypt
+            try {
+                const passwordMatch = await bcrypt.compare(currentPassword, hashedPasswordFromDB);
+                if (passwordMatch) {
+                    deleteUserAccountSQL = `DELETE FROM users where user_id = ?`;
+                    connection.query(deleteUserAccountSQL, [userId], (err, result) => {
+                        if (err) {
+                            console.error('Error deleting account:', err);
+                            return res.status(500).send('Error deleting account');
+                        }
+
+                        req.session.user = undefined; // Set user ID to undefined
+                        req.session.displayname = undefined; // Set displayname to undefined
+
+                        console.log(req.session.user);
+                        console.log(req.session.displayname);
+                        console.log('Account deleted.');
+
+                        res.redirect('/'); // Send the user home
+                    })
+
+                } else {
+                    // Passwords do not match
+                    renderSettingsWithError(req, res, 'Incorrect password.', '');
+
+                }
+            } catch (error) {
+                // Error comparing passwords
+                renderSettingsWithError(req, res, 'An error occurred. Please try again.', '');
+
+            }
+        });
+    }
+});
+
 // Function to query user details and render settings page with error message
 function renderSettingsWithError(req, res, errorMessage, successMessage) {
     const userQuery = `SELECT * FROM users WHERE user_ID = "${req.session.user}" `;
@@ -414,12 +564,13 @@ function renderSettingsWithError(req, res, errorMessage, successMessage) {
         }
 
         const firstrow = row[0];
-        return res.status(500).render('account/settings', { 
-            user: req.session.user, 
-            displayName: req.session.displayName, 
-            userdata: firstrow, 
-            errorMessage, 
-            successMessage });
+        return res.status(500).render('account/settings', {
+            user: req.session.user,
+            displayName: req.session.displayName,
+            userdata: firstrow,
+            errorMessage,
+            successMessage
+        });
     });
 }
 

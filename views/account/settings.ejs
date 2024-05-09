@@ -105,7 +105,7 @@
                         Manage my data
                     </h5>
                     <div>
-                        <button type="button" class="btn btn-outline-danger mt-2">
+                        <button type="button" class="btn btn-outline-danger mt-2" id="eraseDataBtn">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
                                 class="bi bi-eraser" viewBox="0 0 16 16">
                                 <path
@@ -114,7 +114,7 @@
                             <span>
                                 Erase data
                             </span></button>
-                        <button type="button" class="btn btn-outline-danger mt-2">
+                        <button type="button" class="btn btn-outline-danger mt-2" id="closeAccountBtn">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
                                 class="bi bi-x-octagon" viewBox="0 0 16 16">
                                 <path
@@ -153,6 +153,7 @@
                                     <input type="password" class="form-control" id="currentPassword"
                                         name="currentPassword" required>
                                 </div>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                                 <button type="submit" class="btn btn-primary">Change display name</button>
                             </form>
 
@@ -181,6 +182,7 @@
                                     <input type="password" class="form-control" id="currentPassword"
                                         name="currentPassword" required>
                                 </div>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                                 <button type="submit" class="btn btn-primary">Change email</button>
                             </form>
                         </div>
@@ -212,7 +214,70 @@
                                 <div id="displayNameHelp" class="form-text mb-3">Your new password must be at least 8
                                     characters.
                                 </div>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                                 <button type="submit" class="btn btn-primary">Change password</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal to erase data -->
+            <div class="modal fade" id="eraseDataModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+                aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Erase Data</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Erasing data cannot be undone. You check check which kind of data you would like to erase:</p>
+                            <form id="changePasswordForm" action="/account/erase-data" method="POST">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name ="eraseCollectionsCheck" id="eraseCollectionsCheck" checked>
+                                        <label class="form-check-label" for="flexCheckDefault">
+                                          Erase collections
+                                        </label>
+                                      </div>
+                                      <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="eraseWishlistCheck" id="eraseWishlistCheck" checked>
+                                        <label class="form-check-label" for="flexCheckChecked">
+                                          Erase wishlist
+                                        </label>
+                                      </div>
+                                    <label for="currentPassword" class="form-label">To confirm please enter your password below:</label>
+                                    <input type="password" class="form-control" id="currentPassword"
+                                        name="currentPassword" required>
+                                </div>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Erase data</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal to close account -->
+            <div class="modal fade" id="closeAccountModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+                aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Close Account</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Closing your account cannot be undone. All your data will be erased.</p>
+                            <form id="changePasswordForm" action="/account/close-account" method="POST">
+                                <div class="mb-3">
+                                    <label for="currentPassword" class="form-label">To confirm please enter your password below:</label>
+                                    <input type="password" class="form-control" id="currentPassword"
+                                        name="currentPassword" required>
+                                </div>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Close account</button>
                             </form>
                         </div>
                     </div>
@@ -242,6 +307,14 @@
 
                     document.getElementById('changePasswordBtn').addEventListener('click', function () {
                         $('#changePasswordModal').modal('show');
+                    });
+
+                    document.getElementById('eraseDataBtn').addEventListener('click', function () {
+                        $('#eraseDataModal').modal('show');
+                    });
+
+                    document.getElementById('closeAccountBtn').addEventListener('click', function () {
+                        $('#closeAccountModal').modal('show');
                     });
                 });
             </script>
