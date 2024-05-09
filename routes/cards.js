@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const connection = require('../database'); // Import database connection
+const connection = require('../database');
 
 // CARDS
 router.get('/', (req, res) => {
@@ -10,63 +10,71 @@ router.get('/', (req, res) => {
   const query = req.query.query || '';            // Default query to blank
   const sort = req.query.sort || 'name ASC';      // Default sort to Series_ID
 
-  let userCollection = []; // Initialize userCollection as an empty array
-  let userWishlist = [];
+  let userCollection = [];  // Initialize userCollection as an empty array
+  let userWishlist = [];    // Initialize userWishlist as an empty array
 
+  // NEEDS UPDATED FOR FILTERS
   // Query for total cards in database
-  const countSQL = `SELECT COUNT(*) AS totalCount FROM cards WHERE name LIKE ?`;
+  const countSQL = `
+  SELECT COUNT(*) AS totalCount 
+  FROM cards 
+  WHERE name LIKE ?`;
   connection.query(countSQL, [`%${query}%`], (err, countResult) => {
     if (err) {
       console.error(err);
       return res.status(500).send('Internal Server Error');
     }
-
     const totalRecords = countResult[0].totalCount;
     const totalPages = Math.ceil(totalRecords / limit);
 
-    if (req.session.user) {
+    // Query for fetch paginated data with limit and offset
+    let cardsSQL = `
+    SELECT * 
+    FROM cards 
+    WHERE name LIKE ? 
+    ORDER BY ${sort} 
+    LIMIT ? OFFSET ?`;
+    connection.query(cardsSQL, [`%${query}%`, limit, offset], (err, cardsList) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send('Internal Server Error');
+      }
 
-      // Get card ids in users collection
-      let combinedUserCollectionSQL = `
+      // If user is logged in get their collection and wishlist
+      if (req.session.user) {
+
+        // Get card ids in users collection
+        let combinedUserCollectionSQL = `
         SELECT collections_cards.card_ID
         FROM collections_cards
         JOIN collection ON collections_cards.collection_ID = collection.id
-        WHERE collection.user_id = ?
-      `;
-      connection.query(combinedUserCollectionSQL, [req.session.user], (err, userCollectionCards) => {
-        if (err) {
-          console.error(err);
-          return res.status(500).send('Internal Server Error');
-        }
-        const userCollection = userCollectionCards.map(card => card.card_ID);
-
-        // Get card ids in users wishlist
-        let userWishlistSQL = `SELECT wishlist_cards.card_id 
-        FROM wishlist_cards 
-        JOIN wishlist ON wishlist_cards.wishlist_id = wishlist.id
-        WHERE wishlist.user_id = ?`
-        connection.query(userWishlistSQL, [req.session.user], (err, userWishlistCards) => {
+        WHERE collection.user_id = ?`;
+        connection.query(combinedUserCollectionSQL, [req.session.user], (err, userCollectionCards) => {
           if (err) {
             console.error(err);
             return res.status(500).send('Internal Server Error');
           }
-          const userWishlist = userWishlistCards.map(card => card.card_ID);
+          userCollection = userCollectionCards.map(card => card.card_ID);
 
-          // Query for fetch paginated data with limit and offset
-          let cardsSQL = `SELECT * FROM cards WHERE name LIKE ? ORDER BY ${sort} LIMIT ? OFFSET ?`;
-          console.log(cardsSQL);
-          connection.query(cardsSQL, [`%${query}%`, limit, offset], (err, result) => {
+          // Get card ids in users wishlist
+          let userWishlistSQL = `
+          SELECT wishlist_cards.card_id 
+          FROM wishlist_cards 
+          JOIN wishlist ON wishlist_cards.wishlist_id = wishlist.id
+          WHERE wishlist.user_id = ?`;
+          connection.query(userWishlistSQL, [req.session.user], (err, userWishlistCards) => {
             if (err) {
               console.error(err);
               return res.status(500).send('Internal Server Error');
             }
+            userWishlist = userWishlistCards.map(card => card.card_ID);
 
             res.render('cards/cards', {
               user: req.session.user,
               displayName: req.session.displayName,
               userCollection,
               userWishlist,
-              cardsList: result,
+              cardsList,
               limit,
               currentQuery: query,
               currentSort: sort,
@@ -76,23 +84,14 @@ router.get('/', (req, res) => {
             });
           });
         });
-      });
-    } else {
-      // Query for fetch paginated data with limit and offset
-      let cardsSQL = `SELECT * FROM cards WHERE name LIKE ? ORDER BY ${sort} LIMIT ? OFFSET ?`;
-      console.log(cardsSQL);
-      connection.query(cardsSQL, [`%${query}%`, limit, offset], (err, cardsArray) => {
-        if (err) {
-          console.error(err);
-          return res.status(500).send('Internal Server Error');
-        }
 
+      } else {
         res.render('cards/cards', {
           user: req.session.user,
           displayName: req.session.displayName,
           userCollection,
           userWishlist,
-          cardsList: cardsArray,
+          cardsList,
           limit,
           currentQuery: query,
           currentSort: sort,
@@ -100,8 +99,8 @@ router.get('/', (req, res) => {
           totalPages,
           totalRecords,
         });
-      });
-    }
+      }
+    });
   });
 });
 
@@ -110,23 +109,24 @@ router.get('/:cardsId', (req, res) => {
   const cardsId = req.params.cardsId; // Get the series ID from URL params
 
   // Query the database to fetch details of the specified series
-  const cardsSQL = `SELECT * FROM cards WHERE id = ?`;
+  const cardsSQL = `
+  SELECT * 
+  FROM cards 
+  WHERE id = ?`;
   connection.query(cardsSQL, [cardsId], (err, cardsResult) => {
     if (err) {
-      // Handle database query error
       console.error(err);
       return res.status(500).send('Internal Server Error');
     }
 
     // Check if card result is empty
     if (cardsResult.length === 0) {
-      // Card not found, send 404 response
       return res.status(404).send('Card not found');
     }
 
     // Render the series details page with the series and sets data
     res.render('cards/cardsdetails', {
-      card: cardsResult[0] // Assuming only one card is expected with this ID
+      card: cardsResult[0],
     });
   });
 });
@@ -146,7 +146,10 @@ router.post("/add-to-collection", async (req, res) => {
 
   try {
     // Fetch the user's collection ID from the database
-    const userCollectionIdQuery = `SELECT id FROM collection WHERE user_id = ?`;
+    const userCollectionIdQuery = `
+    SELECT id 
+    FROM collection 
+    WHERE user_id = ?`;
     connection.query(userCollectionIdQuery, [userId], (err, userWishlistResult) => {
       if (err) {
         console.error('Error fetching user collection ID:', err);
@@ -162,7 +165,9 @@ router.post("/add-to-collection", async (req, res) => {
       const userCollectionId = userWishlistResult[0].id;
 
       // Now that we have the user's collection ID, perform the insert into collections_cards
-      const insertQuery = 'INSERT INTO collections_cards (collection_ID, card_ID) VALUES (?, ?)';
+      const insertQuery = `
+      INSERT INTO collections_cards (collection_ID, card_ID) 
+      VALUES (?, ?)`;
       connection.query(insertQuery, [userCollectionId, cardId], (insertErr, result) => {
         if (insertErr) {
           console.error('Error adding card to collection:', insertErr);
@@ -194,7 +199,10 @@ router.post("/remove-from-collection", async (req, res) => {
 
   try {
     // Fetch the user's collection ID from the database
-    const userCollectionIdQuery = `SELECT id FROM collection WHERE user_id = ?`;
+    const userCollectionIdQuery = `
+    SELECT id 
+    FROM collection 
+    WHERE user_id = ?`;
     connection.query(userCollectionIdQuery, [userId], (err, userWishlistResult) => {
       if (err) {
         console.error('Error fetching user collection ID:', err);
@@ -210,7 +218,11 @@ router.post("/remove-from-collection", async (req, res) => {
       const userCollectionId = userWishlistResult[0].id;
 
       // Fetch the cards's card_collection ID
-      const collectionCardSQL = 'SELECT id FROM collections_cards WHERE collection_ID = ? AND card_ID = ?';
+      const collectionCardSQL = `
+      SELECT id 
+      FROM collections_cards 
+      WHERE collection_ID = ? 
+      AND card_ID = ?`;
       connection.query(collectionCardSQL, [userCollectionId, cardId], (err, collectionCardIdres) => {
         if (err) {
           console.error('Error fetching user collection ID:', err);
@@ -220,7 +232,9 @@ router.post("/remove-from-collection", async (req, res) => {
         const collectionCardId = collectionCardIdres[0].id;
 
         // Remove card from card_collection table
-        const deleteQuery = 'DELETE FROM collections_cards WHERE id = ?';
+        const deleteQuery = `
+        DELETE FROM collections_cards 
+        WHERE id = ?`;
         connection.query(deleteQuery, [collectionCardId], (deleteErr, result) => {
           if (deleteErr) {
             console.error('Error removing card from collection:', deleteErr);
@@ -252,7 +266,10 @@ router.post("/add-to-wishlist", async (req, res) => {
 
   try {
     // Fetch the user's wishlist ID from the database
-    const userWishlistIdQuery = `SELECT id FROM wishlist WHERE user_id = ?`;
+    const userWishlistIdQuery = `
+    SELECT id 
+    FROM wishlist 
+    WHERE user_id = ?`;
     connection.query(userWishlistIdQuery, [userId], (err, userWishlistResult) => {
       if (err) {
         console.error('Error fetching user wishlist ID:', err);
@@ -268,7 +285,9 @@ router.post("/add-to-wishlist", async (req, res) => {
       const userWishlistId = userWishlistResult[0].id;
 
       // Now that we have the user's wishlist ID, perform the insert into wishlist_cards
-      const insertQuery = 'INSERT INTO wishlist_cards (wishlist_ID, card_ID) VALUES (?, ?)';
+      const insertQuery = `
+      INSERT INTO wishlist_cards (wishlist_ID, card_ID) 
+      VALUES (?, ?)`;
       connection.query(insertQuery, [userWishlistId, cardId], (insertErr, result) => {
         if (insertErr) {
           console.error('Error adding card to wishlist:', insertErr);
@@ -299,24 +318,31 @@ router.post("/remove-from-wishlist", async (req, res) => {
   }
 
   try {
-   // Fetch the user's wishlist ID from the database
-   const userWishlistIdQuery = `SELECT id FROM wishlist WHERE user_id = ?`;
-   connection.query(userWishlistIdQuery, [userId], (err, userWishlistResult) => {
-     if (err) {
-       console.error('Error fetching user wishlist ID:', err);
-       return res.status(500).json({ error: 'Error fetching user wishlist ID' });
-     }
+    // Fetch the user's wishlist ID from the database
+    const userWishlistIdQuery = `
+    SELECT id 
+    FROM wishlist 
+    WHERE user_id = ?`;
+    connection.query(userWishlistIdQuery, [userId], (err, userWishlistResult) => {
+      if (err) {
+        console.error('Error fetching user wishlist ID:', err);
+        return res.status(500).json({ error: 'Error fetching user wishlist ID' });
+      }
 
-     // Check if the user's wishlist ID exists
-     if (userWishlistResult.length === 0) {
-       console.log("User wishlist ID not found");
-       return res.status(404).json({ error: 'User wishlist ID not found' });
-     }
+      // Check if the user's wishlist ID exists
+      if (userWishlistResult.length === 0) {
+        console.log("User wishlist ID not found");
+        return res.status(404).json({ error: 'User wishlist ID not found' });
+      }
 
-     const userWishlistId = userWishlistResult[0].id;
+      const userWishlistId = userWishlistResult[0].id;
 
       // Fetch the cards's wishlist_cards ID
-      const wishlistCardSQL = 'SELECT id FROM wishlist_cards WHERE wishlist_id = ? AND card_ID = ?';
+      const wishlistCardSQL = `
+      SELECT id 
+      FROM wishlist_cards 
+      WHERE wishlist_id = ? 
+      AND card_ID = ?`;
       connection.query(wishlistCardSQL, [userWishlistId, cardId], (err, wishlistCardIdres) => {
         if (err) {
           console.error('Error fetching user wishlist ID:', err);
@@ -326,7 +352,9 @@ router.post("/remove-from-wishlist", async (req, res) => {
         const wishlistCardId = wishlistCardIdres[0].id;
 
         // Remove card from wishlist_card table
-        const deleteQuery = 'DELETE FROM wishlist_cards WHERE id = ?';
+        const deleteQuery = `
+        DELETE FROM wishlist_cards 
+        WHERE id = ?`;
         connection.query(deleteQuery, [wishlistCardId], (deleteErr, result) => {
           if (deleteErr) {
             console.error('Error removing card from wishlist:', deleteErr);
