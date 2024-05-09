@@ -67,7 +67,7 @@ router.get('/', (req, res) => {
               console.error(err);
               return res.status(500).send('Internal Server Error');
             }
-            userWishlist = userWishlistCards.map(card => card.card_ID);
+            userWishlist = userWishlistCards.map(card => card.card_id);
 
             res.render('cards/cards', {
               user: req.session.user,

@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>
-        <%= collection.name %> by <%= collection.ownerDisplayName %>
+        Wishlist
     </title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -19,55 +19,8 @@
         <main class="mt-3">
             <div class="container">
 
-                <% if (user!=collection.user_id && user) { %>
-                    <div class="d-flex row align-items-center">
-
-                        <% if (userCollectionRating==undefined) { %>
-                            <!-- Rate Button -->
-                            <div class="col-auto">
-                                <button class="btn btn-outline-success"
-                                    data-collectionid="<%= collection.id %>" id="rateCollectionBtn">
-                                    Rate this collection
-                                </button>
-                            </div>
-                            <% } else { %>
-                                <!-- Change Rating Button -->
-                                Your rating: <%= parseFloat(userCollectionRating.value).toFixed(2) %> out of 5
-                                    <div class="col-auto">
-                                        <button class="btn btn-outline-success"
-                                            data-collectionid="<%= collection.id %>" id="rateCollectionBtn">
-                                            Change rating
-                                        </button>
-                                    </div>
-                                    <% } %>
-
-                                        <!-- Add Comment Button -->
-                                        <div class="col-auto">
-                                            <button class="btn btn-outline-secondary" id="addCommentBtn">
-                                                Add a comment
-                                            </button>
-                                        </div>
-                                        <!-- View Comments Button -->
-                                        <div class="col-auto">
-                                            <button class="btn btn-outline-secondary ">
-                                                View comments
-                                            </button>
-                                        </div>
-
-                    </div>
-                    <% } %>
-
                         <div class="my-3 fw-medium">
-                            <%= collection.name %> by <%= collection.ownerDisplayName %>
-                        </div>
-
-                        <div>
-                            Rated: <% if (collection.averageRating !==undefined && collection.averageRating !==null) {
-                                %>
-                                Average Rating: <%= parseFloat(collection.averageRating).toFixed(2) %>
-                                    <% } else { %>
-                                        Not yet rated
-                                        <% } %>
+                            <%= displayName %>'s Wishlist
                         </div>
 
                         <div class="my-3 fw-medium">
@@ -118,82 +71,6 @@
                         <!-- This renders pagination -->
                         <%- include('../partials/pagination.ejs', { currentPage, totalPages}) %>
 
-                        <!-- Comments Section -->
-                        Comments Section
-                        <% collectionComments.forEach((comment)=> { %>
-                            <div>
-                                <%= comment.ownerDisplayName %>
-                                <%= comment.created_at %>
-                                <%= comment.text %>
-                                <% }); %>
-                            </div>
-                            
-
-                            <!-- Modal form to rate collection -->
-                            <div class="modal fade" id="rateCollectionModal" tabindex="-1">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Rate this collection</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-
-                                            <form id="rateCollectionForm" action="/collections/add-collection-rating"
-                                                method="POST">
-                                                <input type="hidden" id="collectionID" name="collectionID"
-                                                    value="<%= collection.id %>">
-                                                <input type="hidden" id="userID" name="userID" value="<%= user %>">
-
-                                                <div>
-                                                    <label for="collectionRating" class="form-label">Rate Collection
-                                                        (0-5)</label>
-                                                    <input type="range" class="form-range" id="collectionRating"
-                                                        name="collectionRating" min="0" max="5" step="0.1" required>
-                                                    <output for="collectionRating" id="ratingValue">2.5</output>
-                                                </div>
-
-                                                <div id="ratingHelp" class="form-text mb-3">
-                                                    Slide to select a rating between 0 and 5.
-                                                </div>
-
-                                                <button type="submit" class="btn btn-primary">Rate Collection</button>
-
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Add Comment Modal -->
-                            <div class="modal fade" id="addCommentModal" tabindex="-1">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Add Comment</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                aria-label="Close"></button>
-                                        </div>
-
-                                        <div class="modal-body">
-                                            <!-- Form to add a comment to a collection -->
-                                            <form id="addCommentForm" action="/collections/add-comment" method="POST">
-                                                <div class="mb-3">
-                                                    <label for="commentText" class="form-label">Your Comment</label>
-                                                    <input type="text" class="form-control" id="commentText"
-                                                        name="commentText" required>
-                                                </div>
-                                                <!-- Hidden input fields for user ID and collection ID -->
-                                                <input type="hidden" id="userId" name="userId" value="<%= user %>">
-                                                <input type="hidden" id="collectionId" name="collectionId"
-                                                    value="<%= collection.id %>">
-                                                <button type="submit" class="btn btn-primary">Add Comment</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
             </div>
         </main>
 

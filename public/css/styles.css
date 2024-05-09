@@ -40,3 +40,21 @@
     width: 100%;
     border-radius: .375rem;
 }
+
+.landing-image-background {
+    background-image: url('/images/landingPageImage.jpg'); /* Replace with your image path */
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Horizontally center the content */
+}
+
+.landing-content {
+    background-color: rgba(255, 255, 255, 0.8); /* Neutral background color with transparency */
+    padding: 20px;
+    border-radius: 10px;
+    text-align: left; /* Align text slightly to the left */
+    max-width: 500px; /* Limit the width of the content */
+}

@@ -443,48 +443,56 @@ router.post('/erase-data', [
             // Compare the entered password with the hashed password from the database using bcrypt
             try {
                 const passwordMatch = await bcrypt.compare(currentPassword, hashedPasswordFromDB);
-                if (passwordMatch) {
+                if (!passwordMatch) {
+                    return renderSettingsWithError(req, res, 'Incorrect password.', '');
+                }
+
+                // Define promises for collection and wishlist deletion
+                const deleteCollectionPromise = new Promise((resolve, reject) => {
                     if (eraseCollectionCheck === 'on') {
-                        console.log('Trying to delete collection.')
-                        deleteUserCollectionSQL = `DELETE FROM collection WHERE user_id = ?`;
-                        connection.query(deleteUserCollectionSQL, [userId], (err, result) => {
+                        connection.query('DELETE FROM collections_cards WHERE collection_ID IN (SELECT id FROM collection WHERE user_id = ?)', [userId], (err, result) => {
                             if (err) {
                                 console.error('Error deleting collection:', err);
-                                return res.status(500).send('Error deleting collection');
+                                reject(err);
+                            } else {
+                                console.log('Collection deleted successfully');
+                                resolve();
                             }
-
-                            // Success response if collection is deleted
-                            console.log('Collection deleted successfully')
-
-
-                            if (eraseWishlistCheck === 'on') {
-                                console.log('Trying to delete wishlist.')
-                                deleteUserWishlistSQL = `DELETE FROM wishlist WHERE user_id = ?`;
-                                connection.query(deleteUserWishlistSQL, [userId], (err, result) => {
-                                    if (err) {
-                                        console.error('Error deleting wishlist:', err);
-                                        return res.status(500).send('Error deleting wishlist');
-                                    }
-
-                                    // Success response if collection is deleted
-                                    console.log('Collection deleted successfully')
-                                });
-                            }
-
-                            renderSettingsWithError(req, res, '', 'Data deleted successfully');
-
                         });
+                    } else {
+                        resolve(); // Resolve immediately if no collection deletion is requested
                     }
+                });
 
-                } else {
-                    // Passwords do not match
-                    renderSettingsWithError(req, res, 'Incorrect password.', '');
+                const deleteWishlistPromise = new Promise((resolve, reject) => {
+                    if (eraseWishlistCheck === 'on') {
+                        connection.query('DELETE FROM wishlist_cards WHERE wishlist_id IN (SELECT id FROM wishlist WHERE user_id = ?)', [userId], (err, result) => {
+                            if (err) {
+                                console.error('Error deleting wishlist:', err);
+                                reject(err);
+                            } else {
+                                console.log('Wishlist deleted successfully');
+                                resolve();
+                            }
+                        });
+                    } else {
+                        resolve(); // Resolve immediately if no wishlist deletion is requested
+                    }
+                });
 
-                }
+                // Wait for both promises to resolve
+                Promise.all([deleteCollectionPromise, deleteWishlistPromise])
+                    .then(() => {
+                        renderSettingsWithError(req, res, '', 'Data deleted successfully');
+                    })
+                    .catch((err) => {
+                        console.error('Error deleting data:', err);
+                        renderSettingsWithError(req, res, 'Error deleting data. Please try again.', '');
+                    });
+
             } catch (error) {
-                // Error comparing passwords
+                console.error('Error comparing passwords:', error);
                 renderSettingsWithError(req, res, 'An error occurred. Please try again.', '');
-
             }
         });
     }

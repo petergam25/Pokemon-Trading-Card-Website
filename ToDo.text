@@ -1,15 +1,15 @@
 General:
     Improve overall look of website
     Code modularity
-    Add graphics and info for home page
     Make a footer
     Error page?
+    Make card function buttons pretty and fix wishlist button
 
 Account:
-    Finish account settings page with deleting data
+    View others account
 
 Database:
-    Normalisation of existing tables
+
 
 Dashboard:
     Add dashboard UI and functionality
@@ -20,8 +20,8 @@ Dashboard:
 Collection:
 
 Wishlist:
-    View wishlist
     
+
 Trading system:
     ???
 

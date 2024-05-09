@@ -176,8 +176,7 @@ router.get('/browse', (req, res) => {
     FROM collection
     JOIN users ON collection.user_id = users.user_ID
     LEFT JOIN rating ON collection.id = rating.collection_id
-    GROUP BY collection.id, users.displayName
-`;
+    GROUP BY collection.id, users.displayName`;
     connection.query(collectionsSQL, (err, userCollections) => {
         if (err) {
             console.error(err);
@@ -190,6 +189,97 @@ router.get('/browse', (req, res) => {
             collectionList: userCollections,
             errorMessage: '',
         });
+    })
+});
+
+// VIEW WISHLIST
+router.get('/wishlist', (req, res) => {
+
+    if (!req.session.user) {
+        console.log('Unauthorized access to my collection page.');
+        return res.status(403).send('You must be logged in to view this page.');
+    }
+
+    const page = parseInt(req.query.page) || 1;     // Default to page 1 if no query param provided
+    const limit = parseInt(req.query.limit) || 25;  // Default to 20 if no query param provided
+    const offset = (page - 1) * limit;              // Calculate the offset based on the page and limit
+    const sort = req.query.sort || 'name ASC';      // Default sort to Series_ID
+
+    let userWishlist = [];
+
+    // Get wishlist ID
+    const wishlistIdSQL = `
+    SELECT id 
+    FROM wishlist 
+    WHERE user_id = ?`
+    connection.query(wishlistIdSQL, [req.session.user], (err, wishlistID) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Internal Server Error');
+        }
+
+        // Get all cards in wishlist
+        let allWishlistCardsSQL = `
+        SELECT * 
+        FROM cards 
+        WHERE id IN (SELECT card_ID FROM wishlist_cards WHERE wishlist_id = ?)`;
+        connection.query(allWishlistCardsSQL, [wishlistID[0].id], (err, allWishlistCards) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            const totalRecords = allWishlistCards.length;
+            const totalPages = Math.ceil(totalRecords / limit);
+
+            // Get paginated cards in wishlist
+            let wishlistCardsSQL = `
+            SELECT * 
+            FROM cards 
+            WHERE id IN (SELECT card_ID FROM wishlist_cards WHERE wishlist_id = ?) 
+            ORDER BY ${sort} LIMIT ? OFFSET ?`;
+            connection.query(wishlistCardsSQL, [wishlistID[0].id, limit, offset], (err, wishlistCards) => {
+                if (err) {
+                    console.error(err);
+                    return res.status(500).send('Internal Server Error');
+                }
+
+                // Get collection_cards from the users collection using collection id
+                let UserwishlistCardsSQL = `
+                 SELECT collections_cards.card_ID
+                 FROM collections_cards 
+                 JOIN collection ON collections_cards.collection_ID = collection.id 
+                 JOIN users ON collection.user_id = users.user_ID 
+                 WHERE users.user_ID = ?`;
+                connection.query(UserwishlistCardsSQL, [req.session.user], (err, UserwishlistCards) => {
+                    if (err) {
+                        console.error(err);
+                        return res.status(500).send('Internal Server Error');
+                    }
+                    const userCollection = UserwishlistCards.map(card => card.card_ID);
+
+                    const userWishlist = allWishlistCards.map(card => card.id);
+
+                    console.log('Wishlist Cards:', allWishlistCards);
+                    console.log('Wishlist Card IDs:', userWishlist);
+                    console.log('User Collection:', userCollection);
+
+                    res.render('collections/wishlist', {
+                        user: req.session.user,
+                        displayName: req.session.displayName,
+                        userCollection,
+                        userWishlist,
+                        cardsList: allWishlistCards,
+                        limit,
+                        currentSort: sort,
+                        currentPage: page,
+                        totalPages,
+                        totalRecords,
+                    });
+
+                });
+            })
+        })
     })
 });
 
@@ -231,8 +321,6 @@ router.get('/:collectionID', (req, res) => {
                 console.error(err);
                 return res.status(500).send('Internal Server Error');
             }
-
-            console.log(collectionComments);
 
             // Get all cards from specific collection
             let allCardsSQL = `
@@ -296,11 +384,6 @@ router.get('/:collectionID', (req, res) => {
                                     }
 
                                     const userWishlist = userWishlistCards.map(card => card.card_id);
-
-                                    console.log('User collection Cards raw', UserCollectionCards);
-                                    console.log('User collection Cards', userCollection);
-                                    console.log('User wishlist Cards raw', userWishlistCards);
-                                    console.log('User wishlist Cards', userWishlist);
 
                                     // Render your page with the paginated data and total pages
                                     res.render('collections/collectiondetails', {
