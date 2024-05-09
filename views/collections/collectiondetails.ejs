@@ -262,7 +262,7 @@
 
 
 
-                    // SCRIPTS FOR CARD PARTIAL
+                    // ADD TO COLLECTION BUTTON
                     $(document).on('click', '.add-to-collection-btn', async function () {
                         const button = $(this); // Reference to the button clicked
                         const cardId = button.data('cardid');
@@ -298,6 +298,7 @@
                         }
                     });
 
+                    // REMOVE FROM COLLECTION BUTTON
                     $(document).on('click', '.remove-from-collection-btn', async function () {
                         const button = $(this); // Reference to the button clicked
                         const cardId = button.data('cardid');

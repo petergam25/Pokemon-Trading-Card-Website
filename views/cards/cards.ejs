@@ -37,13 +37,159 @@
                         </form>
                     </div>
 
+                    <!-- Filters Button -->
+                    <div class="col-md-auto">
+                        <button class="btn btn-secondary" type="button" data-bs-toggle="offcanvas"
+                            data-bs-target="#offcanvasScrolling" aria-controls="offcanvasScrolling">Filters</button>
+                    </div>
+
+                    <!-- Filters Canvas -->
+                    <div class="offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1"
+                        id="offcanvasScrolling" aria-labelledby="offcanvasScrollingLabel">
+                        <div class="offcanvas-header">
+                            <h5 class="offcanvas-title" id="offcanvasScrollingLabel">Filters</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="offcanvas-body">
+                            <form id="filterForm" action="/cards/" method="GET">
+
+                                <!-- Expansions -->
+                                <div class="d-grid mb-1">
+                                    <button class="btn btn-secondary" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#expansionsCollapse" aria-expanded="false"
+                                        aria-controls="expansionsCollapse">
+                                        Expansions
+                                    </button>
+                                </div>
+                                <div class="collapse" id="expansionsCollapse">
+                                    <% seriesList.forEach((series)=> { %>
+                                        <div class="d-grid">
+                                            <button class="btn btn-light" type="button" data-bs-toggle="collapse"
+                                                data-bs-target="#<%= series.id %>Collapse" aria-expanded="false"
+                                                aria-controls="<%= series.id %>Collapse">
+                                                <%= series.name %>
+                                            </button>
+                                        </div>
+                                        <!-- Inner collapse for each series -->
+                                        <div class="collapse" id="<%= series.id %>Collapse">
+                                            <div class="card card-body">
+                                                <!-- Checkbox options for card sets -->
+                                                <% setsList.filter(set=> set.series_ID === series.id).forEach((set) => {
+                                                    %>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox"
+                                                            value="<%= set.id %>" id="flexCheck<%= set.id %>"
+                                                            name="cardSet" checked>
+                                                        <label class="form-check-label" for="flexCheck<%= set.id %>">
+                                                            <%= set.name %>
+                                                        </label>
+                                                    </div>
+                                                    <% }); %>
+                                            </div>
+                                        </div>
+                                        <% }); %>
+                                </div>
+
+                                <!-- Card Rarity -->
+                                <div class="d-grid mb-1">
+                                    <button class="btn btn-secondary" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#cardRarityCollapse" aria-expanded="false"
+                                        aria-controls="cardRarityCollapse">
+                                        Card Rarity
+                                    </button>
+                                </div>
+                                <div class="collapse" id="cardRarityCollapse">
+                                    <div class="card card-body">
+                                        <% rarityList.forEach((rarity, index)=> { %>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox"
+                                                    value="<%= rarity.rarity %>" id="flexCheck<%= index %>"
+                                                    name="cardRarity" checked>
+                                                <label class="form-check-label" for="flexCheck<%= index %>">
+                                                    <%= rarity.rarity %>
+                                                </label>
+                                            </div>
+                                            <% }); %>
+                                    </div>
+                                </div>
+
+                                <!-- Card Category -->
+                                <div class="d-grid mb-1">
+                                    <button class="btn btn-secondary" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#cardTypeCollapse" aria-expanded="false"
+                                        aria-controls="cardTypeCollapse">
+                                        Card Category
+                                    </button>
+                                </div>
+                                <div class="collapse" id="cardTypeCollapse">
+                                    <div class="card card-body">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="Pokemon"
+                                                name="cardType" id="flexCheckDefault" checked>
+                                            <label class="form-check-label" for="flexCheckDefault">
+                                                Pokemon
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="Trainer"
+                                                name="cardType" id="flexCheckChecked" checked>
+                                            <label class="form-check-label" for="flexCheckChecked">
+                                                Trainer
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Health Points -->
+                                <div class="d-grid mb-1">
+                                    <button class="btn btn-secondary" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#hpCollapse" aria-expanded="false" aria-controls="hpCollapse">
+                                        Health Points
+                                    </button>
+                                </div>
+                                <div class="collapse" id="hpCollapse">
+                                    <div class="card card-body">
+                                        <div>
+                                            <div>
+                                                <label for="minHP" class="form-label">Minimum HP
+                                                    (0-330)</label>
+                                                <input type="range" class="form-range" id="minHP" name="minHP" min="0"
+                                                    max="330" step="1" value="0">
+                                                <output for="minHP" id="hpValueMin">0</output>
+                                            </div>
+                                            <label for="maxHP" class="form-label">Maximum HP
+                                                (0-330)</label>
+                                            <input type="range" class="form-range" id="maxHP" name="maxHP" min="0"
+                                                max="330" step="1" value="330">
+                                            <output for="maxHP" id="hpValueMax">100</output>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <hr>
+
+                                <div class="d-grid">
+                                    <button class="btn btn-primary" type="submit">Apply Filters</button>
+                                </div>
+                                <div class="d-grid">
+                                    <a href="/cards/" class="btn btn-light mt-1">Reset Filters</a>
+                                </div>
+
+                            </form>
+                        </div>
+                    </div>
+
                 </div>
 
                 <div class="my-3 fw-medium">
-                    <% const startCard=((currentPage - 1) * limit) + 1; %>
-                        <% const endCard=Math.min(currentPage * limit, totalRecords); %>
-
-                            <%= startCard %> - <%= endCard %> of <%= totalRecords %> cards
+                    <% if (totalRecords> 0) { %>
+                        <% const startCard=((currentPage - 1) * limit) + 1; %>
+                            <% const endCard=Math.min(currentPage * limit, totalRecords); %>
+                                <%= startCard %> - <%= endCard %> of <%= totalRecords %> cards
+                                            <% } else { %>
+                                                No cards to display
+                                                <% } %>
                 </div>
 
                 <hr>
@@ -108,6 +254,25 @@
                     let typingTimer; // Timer identifier
                     const doneTypingInterval = 1000; // Time in milliseconds (0.5 seconds)
 
+                    // Get the range input elements and their associated output elements
+                    const minHPRange = document.getElementById('minHP');
+                    const maxHPRange = document.getElementById('maxHP');
+                    const hpValueMin = document.getElementById('hpValueMin');
+                    const hpValueMax = document.getElementById('hpValueMax');
+
+                    // Function to update the displayed HP values
+                    const updateHPValues = () => {
+                        hpValueMin.textContent = minHPRange.value;
+                        hpValueMax.textContent = maxHPRange.value;
+                    };
+
+                    // Add event listeners to the range input elements
+                    minHPRange.addEventListener('input', updateHPValues);
+                    maxHPRange.addEventListener('input', updateHPValues);
+
+                    // Initial call to set default values
+                    updateHPValues();
+
                     // Function to update the URL based on filter values
                     function updateURL() {
                         const urlParams = new URLSearchParams(window.location.search);
@@ -115,7 +280,6 @@
                         urlParams.set('query', currentQuery);
                         urlParams.set('page', currentPage);
                         urlParams.set('limit', selectedLimit);
-
                         window.location.search = urlParams.toString(); // Update the URL
                     }
 
