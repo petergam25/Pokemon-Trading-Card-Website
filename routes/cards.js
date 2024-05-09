@@ -106,9 +106,9 @@ router.get('/', (req, res) => {
 
 // CARDS DETAILS
 router.get('/:cardsId', (req, res) => {
-  const cardsId = req.params.cardsId; // Get the series ID from URL params
+  const cardsId = req.params.cardsId; // Get the card ID from URL params
 
-  // Query the database to fetch details of the specified series
+  // Get the specified card
   const cardsSQL = `
   SELECT * 
   FROM cards 
@@ -124,10 +124,25 @@ router.get('/:cardsId', (req, res) => {
       return res.status(404).send('Card not found');
     }
 
-    // Render the series details page with the series and sets data
-    res.render('cards/cardsdetails', {
-      card: cardsResult[0],
-    });
+    // Get the card attacks
+    const cardAttacksSQL = `
+    SELECT * 
+    FROM pokemon_attacks 
+    WHERE card_id = ?`;
+    connection.query(cardAttacksSQL, [cardsId], (err, cardAttacks) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send('Internal Server Error');
+      }
+
+      console.log('Card Attacks: ', cardAttacks);
+
+      // Render the card details page with the card data
+      res.render('cards/cardsdetails', {
+        card: cardsResult[0],
+        cardAttacks,
+      });
+    })
   });
 });
 
