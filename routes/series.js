@@ -7,10 +7,10 @@ router.get('/', (req, res) => {
 
     const query = req.query.query || ''; // Default query to blank
 
-    const seriesSQL = `SELECT * FROM series WHERE name LIKE ?;`;
-
-    console.log(seriesSQL);
-
+    const seriesSQL = `
+    SELECT * 
+    FROM series 
+    WHERE name LIKE ?;`;
     connection.query(seriesSQL, [`%${query}%`], (err, result) => {
         if (err) throw err;
         res.render("series/series", {

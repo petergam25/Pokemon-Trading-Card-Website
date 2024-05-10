@@ -4,6 +4,7 @@ const sessions = require('express-session');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const flash = require('connect-flash');
+const connection = require('./database');
 const oneHour = 1000 * 60 * 60 * 1;
 
 // Create Express app
@@ -11,9 +12,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware and Configuration
-app.set('view engine', 'ejs'); // Set EJS as the view engine
-app.set('views', path.join(__dirname, 'views')); // Set views directory
-app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from the public directory
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views')); 
+app.use(express.static(path.join(__dirname, 'public'))); 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
@@ -54,13 +55,36 @@ app.get('/', (req, res) => {
 // DASHBOARD
 app.get('/dashboard', (req, res) => {
 
-    if (req.session.user) {
+    if (!req.session.user) {
+        console.log('Unauthorized access to page.');
+        return res.status(403).send('You must be logged in to view this page.');
+    }
+
+    // Get the user's collection
+    userCollectionSQL = `
+    SELECT * 
+    FROM collections_cards
+    JOIN collection ON collection.id = collections_cards.collection_ID
+    JOIN cards ON cards.id = collections_cards.card_ID
+    WHERE collection.user_id = ?`
+    connection.query(userCollectionSQL, [req.session.user], (err, userCollection) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Internal Server Error');
+        }
+
         const user = req.session.user;
         const displayName = req.session.displayName;
-        res.render('dashboard', { user, displayName });
-    } else {
-        res.send('You must be logged in to view this page.');
-    }
+        res.render('dashboard', { 
+            user, 
+            displayName,
+            userCollection,
+         });
+
+    })
+
+
+
 
 });
 

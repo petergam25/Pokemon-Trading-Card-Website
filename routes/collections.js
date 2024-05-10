@@ -7,7 +7,7 @@ const { body, validationResult } = require('express-validator');
 router.get('/my-collections', (req, res) => {
 
     if (!req.session.user) {
-        console.log('Unauthorized access to my collection page.');
+        console.log('Unauthorized access to page.');
         return res.status(403).send('You must be logged in to view this page.');
     }
 
@@ -21,7 +21,6 @@ router.get('/my-collections', (req, res) => {
             return res.status(500).send('Internal Server Error');
         }
 
-        console.log('Trying to render')
         res.render('collections/my-collections', {
             user: req.session.user,
             displayName: req.session.displayName,
@@ -39,7 +38,7 @@ router.post('/add-collection', [
     const { newCollectionName } = req.body;
 
     if (!req.session.user) {
-        console.log('Unauthorized access to my collection page.');
+        console.log('Unauthorized access to page.');
         return res.status(403).send('You must be logged in to view this page.');
     }
 
@@ -80,11 +79,11 @@ router.post('/add-collection', [
 
 // DELETE COLLECTION
 router.post('/delete-collection', (req, res) => {
-    const collectionIdToDelete = req.body.collectionId; // Assuming you send the collection ID in the request body
+    const collectionIdToDelete = req.body.collectionId;
 
     if (!req.session.user) {
-        console.log('Unauthorized access to delete collection.');
-        return res.status(403).send('You must be logged in to perform this action.');
+        console.log('Unauthorized access to page.');
+        return res.status(403).send('You must be logged in to view this page.');
     }
 
     // Check if the user owns the collection (optional, depending on your logic)
@@ -118,7 +117,7 @@ router.post('/delete-collection', (req, res) => {
 router.post('/add-collection-rating', [], (req, res) => {
 
     if (!req.session.user) {
-        console.log('Unauthorized access to my collection page.');
+        console.log('Unauthorized access to page.');
         return res.status(403).send('You must be logged in to view this page.');
     }
 
@@ -132,7 +131,10 @@ router.post('/add-collection-rating', [], (req, res) => {
         return renderMyCollectionsWithError(req, res, errorMessage);
     }
 
-    addRatingSQL = `INSERT INTO rating (value, user_id, collection_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)`;
+    const addRatingSQL = `
+    INSERT INTO rating (value, user_id, collection_id) 
+    VALUES (?, ?, ?) 
+    ON DUPLICATE KEY UPDATE value = VALUES(value)`;
     connection.query(addRatingSQL, [collectionRating, userId, collectionID], (err, result) => {
         if (err) {
             console.error(err);
@@ -140,7 +142,7 @@ router.post('/add-collection-rating', [], (req, res) => {
         }
         console.log('Rating Added');
 
-        // Get info for notification - CODE MODULARITY FOR INSERT NOTIFICATION
+        // Get info for notification
         const notificationInfoSQL = `
         SELECT collection.id, collection.name, users.user_ID
         FROM collection
@@ -164,7 +166,6 @@ router.post('/add-collection-rating', [], (req, res) => {
 
                 console.log('Notification added')
 
-
                 res.redirect(`/collections/${collectionID}`);
             })
         })
@@ -175,7 +176,7 @@ router.post('/add-collection-rating', [], (req, res) => {
 router.post('/add-comment', (req, res) => {
 
     if (!req.session.user) {
-        console.log('Unauthorized access to my collection page.');
+        console.log('Unauthorized access to page.');
         return res.status(403).send('You must be logged in to view this page.');
     }
 
@@ -192,7 +193,7 @@ router.post('/add-comment', (req, res) => {
         }
         console.log('Comment Added');
 
-        // Get info for notification - CODE MODULARITY FOR INSERT NOTIFICATION
+        // Get info for notification
         const notificationInfoSQL = `
         SELECT collection.id, collection.name, users.user_ID
         FROM collection
@@ -252,7 +253,7 @@ router.get('/browse', (req, res) => {
 router.get('/wishlist', (req, res) => {
 
     if (!req.session.user) {
-        console.log('Unauthorized access to my collection page.');
+        console.log('Unauthorized access to page.');
         return res.status(403).send('You must be logged in to view this page.');
     }
 
@@ -315,10 +316,6 @@ router.get('/wishlist', (req, res) => {
                     const userCollection = UserwishlistCards.map(card => card.card_ID);
 
                     const userWishlist = allWishlistCards.map(card => card.id);
-
-                    console.log('Wishlist Cards:', allWishlistCards);
-                    console.log('Wishlist Card IDs:', userWishlist);
-                    console.log('User Collection:', userCollection);
 
                     res.render('collections/wishlist', {
                         user: req.session.user,
@@ -484,26 +481,6 @@ router.get('/:collectionID', (req, res) => {
         })
     })
 });
-
-// Helper function to render collections page with error message
-function renderCollectionsWithError(req, res, errorMessage) {
-    const userId = req.session.user;
-    const userCollectionsSQL = `SELECT * FROM collection WHERE user_id = ?`;
-
-    connection.query(userCollectionsSQL, [userId], (err, userCollections) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).send('Internal Server Error');
-        }
-
-        res.render('collections/collections', {
-            user: req.session.user,
-            displayName: req.session.displayName,
-            collectionList: userCollections,
-            errorMessage,
-        });
-    });
-}
 
 // Helper function to render my-collections page with error message
 function renderMyCollectionsWithError(req, res, errorMessage) {

@@ -29,7 +29,7 @@
                 <div class="row row-cols-sm-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 row-cols-xxl-5 g-3">
                     <% setsList.forEach((set)=> { %>
                         <div class="col">
-                            <div class="card p-3" style="height: 273px">
+                            <div class="card p-3">
                                 <div class="d-flex align-items-center mb-2">
                                     <% if (set.symbol) { %>
                                         <img src="<%= set.symbol %>" alt="Symbol" class="symbol-img me-2">
@@ -38,7 +38,7 @@
                                                 <%= set.name %>
                                             </div>
                                 </div>
-                                <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 80px">
+                                <div class="mb-2 d-flex justify-content-center align-items-center">
                                     <img src="<%= set.logo %>" class="sets-img-custom" alt="<%= set.name %> Logo">
                                 </div>
                                 <div class="d-flex flex-column">

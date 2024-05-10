@@ -39,26 +39,6 @@
                             <input type="hidden" name="sort" value="<%= currentSort %>">
                         </form>
                     </div>
-
-                    <!-- Collection Checks -->
-                    <div class="col-auto">
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
-                            <label class="form-check-label" for="flexRadioDefault1">
-                                All
-                            </label>
-                        </div>
-                    </div>
-                    <div class="col-auto">
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2"
-                                checked>
-                            <label class="form-check-label" for="flexRadioDefault2">
-                                In collection
-                            </label>
-                        </div>
-                    </div>
-
                 </div>
 
                 <div class="my-3 fw-medium">
@@ -105,8 +85,6 @@
             $(document).ready(function () {
                 let sortBy = ''; // Variable to store the current sort value
                 let currentQuery = ''; // Variable to store the current query value
-                let currentPage = 1; // Variable to store the current page
-                let selectedLimit = 25; // Variable to store the selected page limit
                 let typingTimer; // Timer identifier
                 const doneTypingInterval = 1000; // Time in milliseconds (0.5 seconds)
 
@@ -115,8 +93,6 @@
                     const urlParams = new URLSearchParams(window.location.search);
                     urlParams.set('sort', sortBy);
                     urlParams.set('query', currentQuery);
-                    urlParams.set('page', currentPage);
-                    urlParams.set('limit', selectedLimit);
                     window.location.search = urlParams.toString(); // Update the URL
                 }
 
@@ -132,12 +108,9 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 sortBy = urlParams.get('sort') || 'name ASC';
                 currentQuery = urlParams.get('query') || '';
-                currentPage = parseInt(urlParams.get('page')) || 1;
-                selectedLimit = parseInt(urlParams.get('limit')) || 25;
 
                 $('#sortBy').val(sortBy);
                 $('#search').val(currentQuery);
-                $('#pageLimitSelect').val(selectedLimit);
 
                 $('#sortBy').change(function () {
                     sortBy = $(this).val();
@@ -154,20 +127,6 @@
                         updateURL();
                         updateCardsCount();
                     }, doneTypingInterval);
-                });
-
-                $('.pagination-link').click(function (e) {
-                    e.preventDefault();
-                    currentPage = $(this).data('page');
-                    updateURL();
-                    updateCardsCount();
-                });
-
-                $('#pageLimitSelect').change(function () {
-                    selectedLimit = $(this).val();
-                    currentPage = 1; // Reset page to 1 when page limit changes
-                    updateURL();
-                    updateCardsCount();
                 });
 
                 // SCRIPTS FOR CARD PARTIAL

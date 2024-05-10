@@ -8,7 +8,13 @@ const { body, validationResult } = require('express-validator');
 router.get('/register', (req, res) => {
     // Initialize blank error message
     const errorMessage = '';
-    res.render("account/register", { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
+    res.render("account/register", {
+        attemptedDisplayName: req.body.displayName,
+        attemptedEmail: req.body.email,
+        user: req.session.user,
+        displayName: req.session.displayName,
+        errorMessage
+    });
 });
 
 // REGISTER
@@ -22,39 +28,59 @@ router.post('/register', [
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         const errorMessage = errors.array()[0].msg;
-        return res.render('account/register', { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
+        return res.render('account/register', {
+            attemptedDisplayName: req.body.displayName,
+            attemptedEmail: req.body.email,
+            user: req.session.user, displayName:
+                req.session.displayName,
+            errorMessage
+        });
     }
 
     const { displayName, email, password } = req.body;
 
     // Check if displayName already exists in the database
-    const checkDisplayNameQuery = 'SELECT * FROM users WHERE displayName = ?';
+    const checkDisplayNameQuery = `
+    SELECT * 
+    FROM users 
+    WHERE displayName = ?`;
     connection.query(checkDisplayNameQuery, [displayName], async (err, rows) => {
-        // General error from database query
         if (err) {
-            const errorMessage = 'Registration failed during display name check. Please try again.';
-            return res.render('account/register', { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
+            console.error(err);
+            return res.status(500).send('Internal Server Error');
         }
 
         // Check if displayName already exists
         if (rows.length > 0) {
-            const errorMessage = 'Display Name already in use.';
-            return res.render('account/register', { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
+            return res.render('account/register', {
+                attemptedDisplayName: req.body.displayName,
+                attemptedEmail: req.body.email,
+                user: req.session.user,
+                displayName: req.session.displayName,
+                errorMessage: 'Display Name already in use.',
+            });
         }
 
         // Proceed to check if email already exists in the database
-        const checkEmailQuery = 'SELECT * FROM users WHERE email = ?';
+        const checkEmailQuery = `
+        SELECT * 
+        FROM users 
+        WHERE email = ?`;
         connection.query(checkEmailQuery, [email], async (err, rows) => {
-            // General error from database query
             if (err) {
-                const errorMessage = 'Registration failed during email check. Please try again.';
-                return res.render('account/register', { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
+                console.error(err);
+                return res.status(500).send('Internal Server Error');
             }
 
             // Check if email already exists
             if (rows.length > 0) {
-                const errorMessage = 'Email address already registered.';
-                return res.render('account/register', { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
+                return res.render('account/register', {
+                    attemptedDisplayName: req.body.displayName,
+                    attemptedEmail: req.body.email,
+                    user: req.session.user,
+                    displayName: req.session.displayName,
+                    errorMessage: 'Email address already registered.',
+                });
             }
 
             try {
@@ -63,48 +89,57 @@ router.post('/register', [
                 const hashedPassword = await bcrypt.hash(password, 10); // 10 is the saltRounds value
 
                 // Insert new user
-                const insertUserQuery = 'INSERT INTO users (displayName, email, password) VALUES (?, ?, ?)';
+                const insertUserQuery = `
+                INSERT INTO users (displayName, email, password) 
+                VALUES (?, ?, ?)`;
                 connection.query(insertUserQuery, [displayName, email, hashedPassword], async (err, userResult) => {
                     if (err) {
-                        // Handle user insertion error
-                        console.error('Error inserting user:', err);
-                        // Render an error page or return an error response
-                        return res.status(500).send('Error inserting user');
+                        console.error(err);
+                        return res.status(500).send('Internal Server Error');
                     }
 
                     const userId = userResult.insertId;
 
                     // Create a new collection for the user
-                    const insertCollectionQuery = 'INSERT INTO collection (name, user_id) VALUES (?, ?)';
+                    const insertCollectionQuery = `
+                    INSERT INTO collection (name, user_id) 
+                    VALUES (?, ?)`;
                     connection.query(insertCollectionQuery, ['My Collection', userId], async (err, collectionResult) => {
                         if (err) {
-                            // Handle collection insertion error
-                            console.error('Error inserting collection:', err);
-                            // Render an error page or return an error response
-                            return res.status(500).send('Error inserting collection');
+                            console.error(err);
+                            return res.status(500).send('Internal Server Error');
                         }
 
                         // Create a new wishlist for the user
-                        const insertWishlistQuery = 'INSERT INTO wishlist (user_id) VALUES (?)';
+                        const insertWishlistQuery = `
+                        INSERT INTO wishlist (user_id) 
+                        VALUES (?)`;
                         connection.query(insertWishlistQuery, [userId], async (err, wishlistResult) => {
                             if (err) {
-                                // Handle wishlist insertion error
-                                console.error('Error inserting wishlist:', err);
-                                // Render an error page or return an error response
-                                return res.status(500).send('Error inserting wishlist');
+                                console.error(err);
+                                return res.status(500).send('Internal Server Error');
                             }
+
+                            // Registration successful
+                            console.log('Registration Successful');
+                            return res.render("account/sign-in", {
+                                user: req.session.user,
+                                displayName: req.session.displayName,
+                                errorMessage: '',
+                            });
                         });
                     });
-
-                    // Registration successful
-                    console.log('Registration Successful');
-                    return res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage: '' });
                 });
 
             } catch (error) {
                 console.error('Error hashing password:', error);
-                const errorMessage = 'Registration failed during password hashing. Please try again.';
-                return res.render('account/register', { attemptedDisplayName: req.body.displayName, attemptedEmail: req.body.email, user: req.session.user, displayName: req.session.displayName, errorMessage });
+                return res.render('account/register', {
+                    attemptedDisplayName: req.body.displayName,
+                    attemptedEmail: req.body.email,
+                    user: req.session.user,
+                    displayName: req.session.displayName,
+                    errorMessage: 'Registration failed during password hashing. Please try again.'
+                });
             }
         });
     });
@@ -112,9 +147,12 @@ router.post('/register', [
 
 // SIGN-IN PAGE
 router.get('/sign-in', (req, res) => {
-    // Initialise blank error message
-    const errorMessage = '';
-    res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage })
+
+    res.render("account/sign-in", {
+        user: req.session.user,
+        displayName: req.session.displayName,
+        errorMessage: '',
+    })
 });
 
 //SIGN-IN
@@ -126,19 +164,25 @@ router.post('/sign-in', [
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return res.status(400).render('account/sign-in', { user: req.session.user, displayName: req.session.displayName, errorMessage: errors.array()[0].msg });
+        return res.status(400).render('account/sign-in', {
+            user: req.session.user,
+            displayName: req.session.displayName,
+            errorMessage: errors.array()[0].msg
+        });
     }
 
     const useremail = req.body.email;
     const userpassword = req.body.password;
 
     // Find user in database
-    const checkUserQuery = 'SELECT * FROM users WHERE email = ?';
+    const checkUserQuery = `
+    SELECT * 
+    FROM users 
+    WHERE email = ?`;
     connection.query(checkUserQuery, [useremail], async (err, rows) => {
-        //General error from database query
         if (err) {
-            const errorMessage = 'Error querying database.';
-            return res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage });
+            console.error(err);
+            return res.status(500).send('Internal Server Error');
         }
 
         // Check if user exists
@@ -154,35 +198,30 @@ router.post('/sign-in', [
                     // Successful login
                     req.session.user = rows[0].user_ID;
                     req.session.displayName = rows[0].displayName;
-                    console.log('Display name:', req.session.displayName);
-                    console.log('User ID: ', req.session.user);
                     console.log('Successful login.')
                     return res.redirect('/dashboard');
                 } else {
                     // Passwords do not match
-                    const errorMessage = 'Invalid password.';
                     return res.render("account/sign-in", {
                         user: req.session.user,
                         displayName: req.session.displayName,
-                        errorMessage
+                        errorMessage: 'Invalid password.',
                     });
                 }
             } catch (error) {
                 console.error('Error comparing passwords:', error);
-                const errorMessage = 'Login failed. Please try again.';
                 return res.render("account/sign-in", {
                     user: req.session.user,
                     displayName: req.session.displayName,
-                    errorMessage
+                    errorMessage: 'Login failed. Please try again.',
                 });
             }
         } else {
             // User not found
-            const errorMessage = 'User not found.';
             return res.render("account/sign-in", {
                 user: req.session.user,
                 displayName: req.session.displayName,
-                errorMessage
+                errorMessage: 'User not found.',
             });
         }
     });
@@ -190,6 +229,12 @@ router.post('/sign-in', [
 
 // LOGOUT
 router.get('/logout', (req, res) => {
+
+    if (!req.session.user) {
+        console.log('Unauthorized access to page.');
+        return res.status(403).send('You must be logged in to view this page.');
+    }
+
     req.session.user = '';
     req.session.displayName = '';
     res.redirect('/');
@@ -197,22 +242,22 @@ router.get('/logout', (req, res) => {
 
 // NOTIFICATIONS PAGE
 router.get('/notifications', (req, res) => {
+
     if (!req.session.user) {
-        console.log('Unauthorized access to notifications page.');
+        console.log('Unauthorized access to page.');
         return res.status(403).send('You must be logged in to view this page.');
     }
 
     // Get the user's notifications
     const userNotificationSQL = `
-        SELECT notification.id, notification.from_user_id, notification.to_user_id, notification.message, notification_type.value AS notification_type
-        FROM notification 
-        JOIN notification_type ON notification.notification_type_id = notification_type.id
-        WHERE notification.to_user_id = ?`;
-
+    SELECT notification.id, notification.from_user_id, notification.to_user_id, notification.message, notification_type.value AS notification_type
+    FROM notification 
+    JOIN notification_type ON notification.notification_type_id = notification_type.id
+    WHERE notification.to_user_id = ?`;
     connection.query(userNotificationSQL, [req.session.user], (err, userNotifications) => {
         if (err) {
-            console.error('Error fetching notifications:', err);
-            return res.status(500).send('Error fetching notifications.');
+            console.error(err);
+            return res.status(500).send('Internal Server Error');
         }
 
         // Update the status of notifications to 'read' in the database
@@ -242,18 +287,29 @@ router.get('/notifications', (req, res) => {
 router.get('/settings', (req, res) => {
 
     if (!req.session.user) {
-        console.log('Unauthorized access to my collection page.');
+        console.log('Unauthorized access to page.');
         return res.status(403).send('You must be logged in to view this page.');
     }
 
-    const errorMessage = '';
-    const successMessage = '';
     const uid = req.session.user;
-    const user = `SELECT * FROM users WHERE user_ID = "${uid}" `;
-
+    const user = `
+    SELECT * 
+    FROM users 
+    WHERE user_ID = "${uid}" `;
     connection.query(user, (err, row) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Internal Server Error');
+        }
+
         const firstrow = row[0];
-        res.render('account/settings', { user: req.session.user, displayName: req.session.displayName, userdata: firstrow, errorMessage, successMessage });
+        res.render('account/settings', {
+            user: req.session.user,
+            displayName: req.session.displayName,
+            userdata: firstrow,
+            errorMessage: '',
+            successMessage: '',
+        });
     });
 
 });
@@ -265,7 +321,7 @@ router.post('/update-display-name', [
 ], async (req, res) => {
 
     if (!req.session.user) {
-        console.log('Unauthorized access to my collection page.');
+        console.log('Unauthorized access to page.');
         return res.status(403).send('You must be logged in to view this page.');
     }
 
@@ -283,9 +339,10 @@ router.post('/update-display-name', [
         const checkPasswordQuery = 'SELECT * FROM users WHERE user_ID = ?';
         connection.query(checkPasswordQuery, [userId], async (err, rows) => {
             if (err) {
-                console.error('Error checking password:', err);
-                return res.status(500).send('Error checking password', '');
+                console.error(err);
+                return res.status(500).send('Internal Server Error');
             }
+
             if (rows.length === 0) {
                 // User not found
                 renderSettingsWithError(req, res, 'User not found.', '');
@@ -302,8 +359,8 @@ router.post('/update-display-name', [
                     const checkDisplayNameQuery = 'SELECT * FROM users WHERE displayName = ? AND user_ID != ?';
                     connection.query(checkDisplayNameQuery, [newDisplayName, userId], async (err, rows) => {
                         if (err) {
-                            console.error('Error checking display name:', err);
-                            return res.status(500).send('Error checking display name');
+                            console.error(err);
+                            return res.status(500).send('Internal Server Error');
                         }
 
                         if (rows.length > 0) {
@@ -315,9 +372,10 @@ router.post('/update-display-name', [
                             const updateDisplayNameQuery = 'UPDATE users SET displayName = ? WHERE user_ID = ?';
                             connection.query(updateDisplayNameQuery, [newDisplayName, userId], (err, result) => {
                                 if (err) {
-                                    console.error('Error updating display name:', err);
-                                    return res.status(500).send('Failed to update display name');
+                                    console.error(err);
+                                    return res.status(500).send('Internal Server Error');
                                 }
+
                                 req.session.displayName = newDisplayName;
                                 renderSettingsWithError(req, res, '', 'Display name updated successfully!');
                             });
@@ -342,7 +400,7 @@ router.post('/update-email', [
 ], async (req, res) => {
 
     if (!req.session.user) {
-        console.log('Unauthorized access to my collection page.');
+        console.log('Unauthorized access to page.');
         return res.status(403).send('You must be logged in to view this page.');
     }
 
@@ -357,12 +415,16 @@ router.post('/update-email', [
         const currentPassword = req.body.currentPassword;
 
         // Check if the current password matches the user's actual password
-        const checkPasswordQuery = 'SELECT * FROM users WHERE user_ID = ?';
+        const checkPasswordQuery = `
+        SELECT * 
+        FROM users 
+        WHERE user_ID = ?`;
         connection.query(checkPasswordQuery, [userId], async (err, rows) => {
             if (err) {
                 console.error('Error checking password:', err);
                 return res.status(500).send('Error checking password');
             }
+
             if (rows.length === 0) {
                 // User not found
                 renderSettingsWithError(req, res, 'User not found.', '');
@@ -417,7 +479,7 @@ router.post('/update-password', [
 ], async (req, res) => {
 
     if (!req.session.user) {
-        console.log('Unauthorized access to my collection page.');
+        console.log('Unauthorized access to page.');
         return res.status(403).send('You must be logged in to view this page.');
     }
 
@@ -483,7 +545,7 @@ router.post('/erase-data', [
 ], async (req, res) => {
 
     if (!req.session.user) {
-        console.log('Unauthorized access to my collection page.');
+        console.log('Unauthorized access to page.');
         return res.status(403).send('You must be logged in to view this page.');
     }
 
@@ -499,13 +561,11 @@ router.post('/erase-data', [
         const eraseCollectionCheck = req.body.eraseCollectionsCheck;
         const eraseWishlistCheck = req.body.eraseWishlistCheck;
 
-        console.log(eraseCollectionCheck);
-        console.log(eraseWishlistCheck);
-        console.log(currentPassword);
-
-
         // Check if the current password matches the user's actual password
-        const checkPasswordQuery = 'SELECT * FROM users WHERE user_ID = ?';
+        const checkPasswordQuery = `
+        SELECT * 
+        FROM users 
+        WHERE user_ID = ?`;
         connection.query(checkPasswordQuery, [userId], async (err, rows) => {
             if (err) {
                 console.error('Error checking password:', err);
@@ -528,7 +588,10 @@ router.post('/erase-data', [
                 // Define promises for collection and wishlist deletion
                 const deleteCollectionPromise = new Promise((resolve, reject) => {
                     if (eraseCollectionCheck === 'on') {
-                        connection.query('DELETE FROM collections_cards WHERE collection_ID IN (SELECT id FROM collection WHERE user_id = ?)', [userId], (err, result) => {
+                        const deleteCollectionSQL = `
+                        DELETE FROM collections_cards 
+                        WHERE collection_ID IN (SELECT id FROM collection WHERE user_id = ?)`;
+                        connection.query(deleteCollectionSQL , [userId], (err, result) => {
                             if (err) {
                                 console.error('Error deleting collection:', err);
                                 reject(err);
@@ -544,7 +607,10 @@ router.post('/erase-data', [
 
                 const deleteWishlistPromise = new Promise((resolve, reject) => {
                     if (eraseWishlistCheck === 'on') {
-                        connection.query('DELETE FROM wishlist_cards WHERE wishlist_id IN (SELECT id FROM wishlist WHERE user_id = ?)', [userId], (err, result) => {
+                        const deleteWishListSQL = `
+                        DELETE FROM wishlist_cards 
+                        WHERE wishlist_id IN (SELECT id FROM wishlist WHERE user_id = ?)`;
+                        connection.query(deleteWishListSQL, [userId], (err, result) => {
                             if (err) {
                                 console.error('Error deleting wishlist:', err);
                                 reject(err);
@@ -592,7 +658,9 @@ router.post('/close-account', [
         const currentPassword = req.body.currentPassword;
 
         // Check if the current password matches the user's actual password
-        const checkPasswordQuery = 'SELECT * FROM users WHERE user_ID = ?';
+        const checkPasswordQuery = `
+        SELECT * 
+        FROM users WHERE user_ID = ?`;
         connection.query(checkPasswordQuery, [userId], async (err, rows) => {
             if (err) {
                 console.error('Error checking password:', err);
@@ -609,7 +677,9 @@ router.post('/close-account', [
             try {
                 const passwordMatch = await bcrypt.compare(currentPassword, hashedPasswordFromDB);
                 if (passwordMatch) {
-                    deleteUserAccountSQL = `DELETE FROM users where user_id = ?`;
+                    deleteUserAccountSQL = `
+                    DELETE FROM users 
+                    WHERE user_id = ?`;
                     connection.query(deleteUserAccountSQL, [userId], (err, result) => {
                         if (err) {
                             console.error('Error deleting account:', err);
@@ -619,8 +689,6 @@ router.post('/close-account', [
                         req.session.user = undefined; // Set user ID to undefined
                         req.session.displayname = undefined; // Set displayname to undefined
 
-                        console.log(req.session.user);
-                        console.log(req.session.displayname);
                         console.log('Account deleted.');
 
                         res.redirect('/'); // Send the user home

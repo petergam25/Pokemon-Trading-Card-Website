@@ -8,7 +8,6 @@ router.get('/', (req, res) => {
   const page = parseInt(req.query.page) || 1;     // Default to page 1 if no query param provided
   const limit = parseInt(req.query.limit) || 25;  // Default to 20 if no query param provided
   const offset = (page - 1) * limit;              // Calculate the offset based on the page and limit
-
   const query = req.query.query || '';            // Default query to blank
   const sort = req.query.sort || 'name ASC';      // Default sort to Series_ID
 
@@ -18,8 +17,6 @@ router.get('/', (req, res) => {
   const minHP = parseInt(req.query.minHP) || 0;
   const maxHP = parseInt(req.query.maxHP) || 330;
   const cardRarity = req.query.cardRarity || '';
-
-  console.log(cardRarity);
 
   let whereClause = '1=1'; // Default to true condition
 
@@ -86,8 +83,6 @@ router.get('/', (req, res) => {
         SELECT COUNT(*) AS totalCount 
         FROM cards 
         WHERE name LIKE ? AND ${whereClause}`;
-
-        console.log(countSQL);
 
         connection.query(countSQL, [`%${query}%`], (err, countResult) => {
           if (err) {
@@ -184,6 +179,32 @@ router.get('/', (req, res) => {
   })
 })
 
+// GET route to render the compare-cards page
+router.get('/compare-cards', (req, res) => {
+  // You can render the page without any card data initially
+  res.render('cards/comparecards', { cards: [] });
+});
+
+// POST route to handle form submission and fetch card data
+router.post('/compare-cards', (req, res) => {
+  const { card1, card2 } = req.body;
+
+  // Query the database to fetch card details based on the IDs
+  const cardQuery = `
+    SELECT * 
+    FROM cards 
+    WHERE id IN (?, ?)`;
+
+  connection.query(cardQuery, [card1, card2], (err, results) => {
+    if (err) {
+      console.error('Error fetching cards:', err);
+      return res.status(500).send('Error fetching cards.');
+    }
+
+    // Render the comparison page with the fetched card data
+    res.render('cards/comparecards', { cards: results });
+  });
+});
 
 
 // CARDS DETAILS
@@ -230,9 +251,6 @@ router.get('/:cardsId', (req, res) => {
 router.post("/add-to-collection", async (req, res) => {
   const { cardId } = req.body; // Extract cardId from request body
   const userId = req.session.user;
-
-  console.log('Card ID: ', cardId);
-  console.log('User ID: ', userId);
 
   // Check if user is logged in
   if (!userId) {
@@ -283,9 +301,6 @@ router.post("/remove-from-collection", async (req, res) => {
 
   const { cardId } = req.body; // Extract cardId from request body
   const userId = req.session.user;
-
-  console.log('Card ID: ', cardId);
-  console.log('User ID: ', userId);
 
   // Check if user is logged in
   if (!userId) {
@@ -351,9 +366,6 @@ router.post("/add-to-wishlist", async (req, res) => {
   const { cardId } = req.body; // Extract cardId from request body
   const userId = req.session.user;
 
-  console.log('Card ID: ', cardId);
-  console.log('User ID: ', userId);
-
   // Check if user is logged in
   if (!userId) {
     return res.status(401).json({ error: 'User not logged in' });
@@ -403,9 +415,6 @@ router.post("/remove-from-wishlist", async (req, res) => {
 
   const { cardId } = req.body; // Extract cardId from request body
   const userId = req.session.user;
-
-  console.log('Card ID: ', cardId);
-  console.log('User ID: ', userId);
 
   // Check if user is logged in
   if (!userId) {

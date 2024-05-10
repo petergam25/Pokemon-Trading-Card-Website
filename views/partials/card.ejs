@@ -1,6 +1,8 @@
 <!-- This renders an individual card -->
 <!-- {card, userCollection} -->
 
+<link rel="stylesheet" href="/css/styles.css">
+
 <div class="card-container">
 
     <a href="/cards/<%= card.id %>">
@@ -47,9 +49,8 @@
                         <% } %>
             </div>
 
-            <div class="buttons-container d-flex justify-content-evenly">
+            <div class="buttons-container d-flex justify-content-evenly mt-2">
                 <% if (userWishlist.includes(card.id)) { %>
-                    <!-- Card is in wishlist, display remove button with filled heart icon -->
                     <button class="btn btn-outline-danger remove-from-wishlist-btn" data-cardid="<%= card.id %>">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                             class="bi bi-heart-fill" viewBox="0 0 16 16">
@@ -58,7 +59,6 @@
                         </svg>
                     </button>
                     <% } else { %>
-                        <!-- Card is not in wishlist, display add button with empty heart icon -->
                         <button class="btn btn-outline-success add-to-wishlist-btn" data-cardid="<%= card.id %>">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                                 class="bi bi-heart" viewBox="0 0 16 16">

@@ -42,8 +42,10 @@
             <hr class="dropdown-divider">
 
             <a class="dropdown-item" href="/account/notifications">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-bell-fill" viewBox="0 0 16 16">
-                <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2m.995-14.901a1 1 0 1 0-1.99 0A5 5 0 0 0 3 6c0 1.098-.5 6-2 7h14c-1.5-1-2-5.902-2-7 0-2.42-1.72-4.44-4.005-4.901"/>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-bell-fill"
+                viewBox="0 0 16 16">
+                <path
+                  d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2m.995-14.901a1 1 0 1 0-1.99 0A5 5 0 0 0 3 6c0 1.098-.5 6-2 7h14c-1.5-1-2-5.902-2-7 0-2.42-1.72-4.44-4.005-4.901" />
               </svg>
               <span class="ps-2">
                 Notifications
@@ -51,8 +53,9 @@
             </a>
 
             <a class="dropdown-item" href="/collections/wishlist">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-heart-fill" viewBox="0 0 16 16">
-                <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314"/>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                class="bi bi-heart-fill" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314" />
               </svg>
               <span class="ps-2">
                 Wishlist
@@ -123,6 +126,7 @@
         <li class="nav-item">
           <a class="nav-link" href="/dashboard">Dashboard</a>
         </li>
+
         <!-- Browse Dropdown -->
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -143,11 +147,15 @@
           <ul class="dropdown-menu">
             <% if (typeof user !=='undefined' && user) { %>
               <li><a class="dropdown-item" href="/collections/my-collections">My Collections</a></li>
-              <% } %> 
-              <li><a class="dropdown-item" href="/collections/browse">Browse Collections</a>
+              <% } %>
+                <li><a class="dropdown-item" href="/collections/browse">Browse Collections</a></li>
+          </ul>
         </li>
-      </ul>
-      </li>
+
+        <!-- Compare Cards -->
+        <li class="nav-item">
+          <a class="nav-link" href="/cards/compare-cards">Compare Cards</a>
+        </li>
       </ul>
     </div>
 
