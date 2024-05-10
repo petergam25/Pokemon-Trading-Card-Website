@@ -32,7 +32,7 @@
                             </div>
                             <% } else { %>
                                 <!-- Change Rating Button -->
-                                Your rating: <%= parseFloat(userCollectionRating.value).toFixed(2) %> out of 5
+                                You rated <%= parseFloat(userCollectionRating.value).toFixed(2) %> out of 5
                                     <div class="col-auto">
                                         <button class="btn btn-outline-success"
                                             data-collectionid="<%= collection.id %>" id="rateCollectionBtn">
@@ -47,13 +47,6 @@
                                                 Add a comment
                                             </button>
                                         </div>
-                                        <!-- View Comments Button -->
-                                        <div class="col-auto">
-                                            <button class="btn btn-outline-secondary ">
-                                                View comments
-                                            </button>
-                                        </div>
-
                     </div>
                     <% } %>
 

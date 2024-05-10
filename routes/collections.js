@@ -117,13 +117,13 @@ router.post('/delete-collection', (req, res) => {
 // ADD RATING TO COLLECTION
 router.post('/add-collection-rating', [], (req, res) => {
 
-    const { collectionID, collectionRating } = req.body;
-    const userId = req.session.user;
-
     if (!req.session.user) {
         console.log('Unauthorized access to my collection page.');
         return res.status(403).send('You must be logged in to view this page.');
     }
+
+    const { collectionID, collectionRating } = req.body;
+    const userId = req.session.user;
 
     // Check for validation errors
     const errors = validationResult(req);
@@ -139,7 +139,35 @@ router.post('/add-collection-rating', [], (req, res) => {
             return res.status(500).send('Internal Server Error');
         }
         console.log('Rating Added');
-        res.redirect(`/collections/${collectionID}`);
+
+        // Get info for notification - CODE MODULARITY FOR INSERT NOTIFICATION
+        const notificationInfoSQL = `
+        SELECT collection.id, collection.name, users.user_ID
+        FROM collection
+        JOIN users ON collection.user_id = users.user_ID
+        WHERE collection.id = ?`
+        connection.query(notificationInfoSQL, [collectionID], (err, notificationInfo) => {
+            if (err) {
+                console.error('Error adding comment:', err);
+                return res.status(500).json({ success: false, message: 'Failed to add comment' });
+            }
+
+            // Add notification for user
+            const addNotificationSQL = `
+            INSERT INTO notification (notification_type_id, from_user_id, to_user_id, message)
+            VALUES (2, ?, ?, ?)`
+            connection.query(addNotificationSQL, [userId, notificationInfo[0].user_ID, `A user has just added a rating to your collection: '${notificationInfo[0].name}'`], (err, result) => {
+                if (err) {
+                    console.error('Error adding comment:', err);
+                    return res.status(500).json({ success: false, message: 'Failed to add comment' });
+                }
+
+                console.log('Notification added')
+
+
+                res.redirect(`/collections/${collectionID}`);
+            })
+        })
     })
 });
 
@@ -164,7 +192,7 @@ router.post('/add-comment', (req, res) => {
         }
         console.log('Comment Added');
 
-        // Get info for notification
+        // Get info for notification - CODE MODULARITY FOR INSERT NOTIFICATION
         const notificationInfoSQL = `
         SELECT collection.id, collection.name, users.user_ID
         FROM collection
