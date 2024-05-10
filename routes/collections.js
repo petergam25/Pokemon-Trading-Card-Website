@@ -163,7 +163,35 @@ router.post('/add-comment', (req, res) => {
             return res.status(500).json({ success: false, message: 'Failed to add comment' });
         }
         console.log('Comment Added');
-        res.redirect(`/collections/${collectionId}`);
+
+        // Get info for notification
+        const notificationInfoSQL = `
+        SELECT collection.id, collection.name, users.user_ID
+        FROM collection
+        JOIN users ON collection.user_id = users.user_ID
+        WHERE collection.id = ?`
+        connection.query(notificationInfoSQL, [collectionId], (err, notificationInfo) => {
+            if (err) {
+                console.error('Error adding comment:', err);
+                return res.status(500).json({ success: false, message: 'Failed to add comment' });
+            }
+
+            // Add notification for user
+            const addNotificationSQL = `
+            INSERT INTO notification (notification_type_id, from_user_id, to_user_id, message)
+            VALUES (2, ?, ?, ?)`
+            connection.query(addNotificationSQL, [userId, notificationInfo[0].user_ID, `A user has just added a comment to your collection: '${notificationInfo[0].name}'`], (err, result) => {
+                if (err) {
+                    console.error('Error adding comment:', err);
+                    return res.status(500).json({ success: false, message: 'Failed to add comment' });
+                }
+
+                console.log('Notification added')
+
+                res.redirect(`/collections/${collectionId}`);
+
+            })
+        })
     });
 });
 

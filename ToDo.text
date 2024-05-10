@@ -1,15 +1,7 @@
 General:
     Improve overall look of website
+        Make card function buttons pretty and fix wishlist button
     Code modularity
-    Make a footer
-    Error page?
-    Make card function buttons pretty and fix wishlist button
-
-Account:
-    View others account
-
-Database:
-
 
 Dashboard:
     Add dashboard UI and functionality
@@ -17,24 +9,12 @@ Dashboard:
     Cards in collection per rarity
     Cards in wishlist
 
-Collection:
-
-Wishlist:
-    
-
-Trading system:
-    ???
 
 Notifications:
-    ???
+    Yes add this - probnably not too bad
+    FROM: add comment to user collection, rate user collection
 
-Navbar:
-    Restructure links (browse, home, dashboard, my collection, 
-    browse collections)
-    Fix navbar expansion
-    Not rendering home correctly?
-    
+
 Cards / Sets / Series:
     Compare cards
-    Render total cards in sets etc dynamically
 

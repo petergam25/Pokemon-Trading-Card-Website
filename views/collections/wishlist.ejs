@@ -24,9 +24,13 @@
                         </div>
 
                         <div class="my-3 fw-medium">
-                            <% const startCard=((currentPage - 1) * limit) + 1; %>
-                                <% const endCard=Math.min(currentPage * limit, totalRecords); %>
-                                    <%= startCard %> - <%= endCard %> of <%= totalRecords %> cards
+                            <% if (totalRecords> 0) { %>
+                                <% const startCard=((currentPage - 1) * limit) + 1; %>
+                                    <% const endCard=Math.min(currentPage * limit, totalRecords); %>
+                                        <%= startCard %> - <%= endCard %> of <%= totalRecords %> cards
+                                                    <% } else { %>
+                                                        No cards to display
+                                                        <% } %>
                         </div>
 
                         <hr>

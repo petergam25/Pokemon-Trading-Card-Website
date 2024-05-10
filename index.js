@@ -51,7 +51,7 @@ app.get('/', (req, res) => {
     }
 });
 
-// ABOUT PAGE
+// DASHBOARD
 app.get('/dashboard', (req, res) => {
 
     if (req.session.user) {

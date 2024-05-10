@@ -161,17 +161,29 @@ router.post('/sign-in', [
                 } else {
                     // Passwords do not match
                     const errorMessage = 'Invalid password.';
-                    return res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage });
+                    return res.render("account/sign-in", {
+                        user: req.session.user,
+                        displayName: req.session.displayName,
+                        errorMessage
+                    });
                 }
             } catch (error) {
                 console.error('Error comparing passwords:', error);
                 const errorMessage = 'Login failed. Please try again.';
-                return res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage });
+                return res.render("account/sign-in", {
+                    user: req.session.user,
+                    displayName: req.session.displayName,
+                    errorMessage
+                });
             }
         } else {
             // User not found
             const errorMessage = 'User not found.';
-            return res.render("account/sign-in", { user: req.session.user, displayName: req.session.displayName, errorMessage });
+            return res.render("account/sign-in", {
+                user: req.session.user,
+                displayName: req.session.displayName,
+                errorMessage
+            });
         }
     });
 });
@@ -183,23 +195,67 @@ router.get('/logout', (req, res) => {
     res.redirect('/');
 });
 
+// NOTIFICATIONS PAGE
+router.get('/notifications', (req, res) => {
+    if (!req.session.user) {
+        console.log('Unauthorized access to notifications page.');
+        return res.status(403).send('You must be logged in to view this page.');
+    }
+
+    // Get the user's notifications
+    const userNotificationSQL = `
+        SELECT notification.id, notification.from_user_id, notification.to_user_id, notification.message, notification_type.value AS notification_type
+        FROM notification 
+        JOIN notification_type ON notification.notification_type_id = notification_type.id
+        WHERE notification.to_user_id = ?`;
+
+    connection.query(userNotificationSQL, [req.session.user], (err, userNotifications) => {
+        if (err) {
+            console.error('Error fetching notifications:', err);
+            return res.status(500).send('Error fetching notifications.');
+        }
+
+        // Update the status of notifications to 'read' in the database
+        const notificationIds = userNotifications.map(notification => notification.id);
+        if (notificationIds.length > 0) {
+            const markAsReadSQL = `UPDATE notification SET notification_type_id = 1 WHERE id IN (?)`;
+            connection.query(markAsReadSQL, [notificationIds], (updateErr, updateResult) => {
+                if (updateErr) {
+                    console.error('Error marking notifications as read:', updateErr);
+                    // Handle the error if needed
+                } else {
+                    console.log('Notifications marked as read.');
+                }
+            });
+        }
+
+        res.render('account/notifications', {
+            user: req.session.user,
+            displayName: req.session.displayName,
+            userNotifications,
+        });
+    });
+});
+
+
 // SETTINGS PAGE
 router.get('/settings', (req, res) => {
 
-    if (req.session.user) {
-        const errorMessage = '';
-        const successMessage = '';
-        const uid = req.session.user;
-        const user = `SELECT * FROM users WHERE user_ID = "${uid}" `;
-
-        connection.query(user, (err, row) => {
-            const firstrow = row[0];
-            res.render('account/settings', { user: req.session.user, displayName: req.session.displayName, userdata: firstrow, errorMessage, successMessage });
-        });
-    } else {
-        console.log('Unauthorized access to settings page.');
-        res.status(403).send('You must be logged in to view this page.');
+    if (!req.session.user) {
+        console.log('Unauthorized access to my collection page.');
+        return res.status(403).send('You must be logged in to view this page.');
     }
+
+    const errorMessage = '';
+    const successMessage = '';
+    const uid = req.session.user;
+    const user = `SELECT * FROM users WHERE user_ID = "${uid}" `;
+
+    connection.query(user, (err, row) => {
+        const firstrow = row[0];
+        res.render('account/settings', { user: req.session.user, displayName: req.session.displayName, userdata: firstrow, errorMessage, successMessage });
+    });
+
 });
 
 // UPDATE DISPLAY NAME
@@ -207,6 +263,12 @@ router.post('/update-display-name', [
     body('newDisplayName').trim().isLength({ min: 5, max: 10 }).withMessage('Display Name must be 5 to 10 characters long.'),
     body('currentPassword').trim().notEmpty().withMessage('Current Password is required.')
 ], async (req, res) => {
+
+    if (!req.session.user) {
+        console.log('Unauthorized access to my collection page.');
+        return res.status(403).send('You must be logged in to view this page.');
+    }
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         // Validation errors
@@ -278,6 +340,12 @@ router.post('/update-email', [
     body('newEmail').trim().isEmail().normalizeEmail().withMessage('Invalid email format.'),
     body('currentPassword').trim().notEmpty().withMessage('Current Password is required.')
 ], async (req, res) => {
+
+    if (!req.session.user) {
+        console.log('Unauthorized access to my collection page.');
+        return res.status(403).send('You must be logged in to view this page.');
+    }
+
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -348,6 +416,11 @@ router.post('/update-password', [
     body('newPassword').isLength({ min: 8 }).withMessage('Password must be 8 characters or more.')
 ], async (req, res) => {
 
+    if (!req.session.user) {
+        console.log('Unauthorized access to my collection page.');
+        return res.status(403).send('You must be logged in to view this page.');
+    }
+
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -408,6 +481,11 @@ router.post('/update-password', [
 router.post('/erase-data', [
     body('currentPassword').trim().notEmpty().withMessage('Current Password is required.'),
 ], async (req, res) => {
+
+    if (!req.session.user) {
+        console.log('Unauthorized access to my collection page.');
+        return res.status(403).send('You must be logged in to view this page.');
+    }
 
     // Check for validation errors
     const errors = validationResult(req);
